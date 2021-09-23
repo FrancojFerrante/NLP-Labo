@@ -186,7 +186,13 @@ df_translate.to_pickle(cwd+pickle_traduccion)
 
 
 from nltk.corpus import wordnet as wn
-motorcar = wn.synset('car.n.1')
+motorcar = wn.synset('dog.n.1')
 print(motorcar.hypernyms())
+
+
+
+
+
+
 
 
