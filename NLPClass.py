@@ -28,6 +28,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 
+from googletrans import Translator
+# pip install googletrans==4.0.0rc1
+
+import pickle
+# pip install pickle-mixin
+
+from nltk.corpus import wordnet as wn
+
 class NLPClass:
     def __init__(self):
         self.numero = 1
@@ -94,7 +102,7 @@ class NLPClass:
             counter = 0
             
             while accumulated < count_occurences * percentaje:
-              accumulated += sorted_words.values()[counter]
+              accumulated += list(sorted_words.values())[counter]
               counter += 1
             
             print(f"The {counter * 100 / len(words)}% most common words "
@@ -131,15 +139,22 @@ class NLPClass:
                 
         return lista
     
-    def plot_word_distribution(self,count_words,min_repetition=1):
+    def translate(self, text, lan_src = 'es', lan_dest = 'en'):
         
-        lista = [w for w in count_words if w>min_repetition]
-        plt.bar(range(len(lista)), lista)
-        plt.show()
+        translator = Translator()
+        text_translate = []
+        for element in text:
+            text_translate.append(translator.translate(element, src=lan_src, dest=lan_dest).text)
+        return text_translate
+    
 
 # Testeo los métodos
-cwd = 'D://Franco//Doctorado//Laboratorio//NLP'
+# cwd = 'D://Franco//Doctorado//Laboratorio//NLP' # path Franco escritorio
+cwd = 'C://Franco//NLP' # path Franco Udesa
+pickle_traduccion = '//Scripts//traducciones.pkl'
 df_pacientes = pd.ExcelFile(cwd+r'\Bases\Transcripciones fluidez.xlsx')
+
+
 df_pacientes = pd.read_excel(df_pacientes, 'Hoja 1')
 nlp_class = NLPClass()
 df_pacientes['fluency_animals_0_15_correctas_individuales'].fillna('', inplace=True)
@@ -153,9 +168,25 @@ resultado = nlp_class.join_horizontally_strings(df_pacientes, " ", 'fluency_anim
                             'fluency_animals_45_60_correctas_individuales')
 
 lista_tokenizada = nlp_class.tokenize_list(resultado)
-unique_words, count_words = nlp_class.count_words(lista_tokenizada,True)
-nlp_class.percentaje_common_words(unique_words, count_words,0.8)
-nlp_class.plot_word_distribution(count_words,3)
+unique_words, count_words = nlp_class.count_words(lista_tokenizada,0.8)
 
+
+try:
+    df_translate = pd.read_pickle(cwd+pickle_traduccion)
+except (OSError, IOError) as e:
+    df_translate = pd.DataFrame({'spanish','english'})
+
+for word in unique_words:
+    if word not in df_translate['spanish'].to_list():
+        print("Entré")
+        df2 = pd.DataFrame({'spanish': [word],'english': nlp_class.translate([word])})
+        df_translate = df_translate.append(df2, ignore_index = True)
+
+df_translate.to_pickle(cwd+pickle_traduccion)
+
+
+from nltk.corpus import wordnet as wn
+motorcar = wn.synset('car.n.1')
+print(motorcar.hypernyms())
 
 
