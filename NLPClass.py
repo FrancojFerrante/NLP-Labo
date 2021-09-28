@@ -59,6 +59,13 @@ class NLPClass:
         df_translate = df_translate.append(pd.DataFrame({'spanish': ["cuncuna"], 'english': ["caterpillar"]}), ignore_index = True)
         df_translate = df_translate.append(pd.DataFrame({'spanish': ["carpincho"], 'english': ["capybara"]}), ignore_index = True)
         df_translate = df_translate.append(pd.DataFrame({'spanish': ["jote"], 'english': ["buzzard"]}), ignore_index = True)
+        df_translate = df_translate.append(pd.DataFrame({'spanish': ["zorzal"], 'english': ["fieldfare"]}), ignore_index = True)
+        df_translate = df_translate.append(pd.DataFrame({'spanish': ["guanaco"], 'english': ["guanaco"]}), ignore_index = True)
+        df_translate = df_translate.append(pd.DataFrame({'spanish': ["pejerrey"], 'english': ["silverside"]}), ignore_index = True)
+        df_translate = df_translate.append(pd.DataFrame({'spanish': ["mandril"], 'english': ["mandrill"]}), ignore_index = True)
+        df_translate = df_translate.append(pd.DataFrame({'spanish': ["peludo"], 'english': ["armadillo"]}), ignore_index = True)
+        df_translate = df_translate.append(pd.DataFrame({'spanish': ["chingue"], 'english': ["skunk"]}), ignore_index = True)
+        df_translate = df_translate.append(pd.DataFrame({'spanish': ["guaren"], 'english': ["brown_rat"]}), ignore_index = True)
 
 
         
@@ -172,7 +179,7 @@ class NLPClass:
         translator = Translator()
         text_translate = []
         for element in text:
-            text_translate.append(translator.translate(element, src=lan_src, dest=lan_dest))
+            text_translate.append(translator.translate(element.replace("-"," "), src=lan_src, dest=lan_dest))
         return text_translate
     
     def get_pickle_and_translate(self,texts,path = ""):
