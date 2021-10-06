@@ -11,22 +11,22 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from collections import Counter, OrderedDict
-from tqdm.notebook import tqdm
+# from tqdm.notebook import tqdm
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-from torch.utils.data import TensorDataset, DataLoader
+# import torch
+# import torch.nn as nn
+# import torch.optim as optim
+# import torch.nn.functional as F
+# from torch.utils.data import TensorDataset, DataLoader
 
 import torchtext
 from torchtext.data import get_tokenizer
 
-from sklearn.utils import shuffle
-from sklearn.metrics import classification_report
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer
+# from sklearn.utils import shuffle
+# from sklearn.metrics import classification_report
+# from sklearn.linear_model import LogisticRegression
+# from sklearn.model_selection import train_test_split
+# from sklearn.feature_extraction.text import CountVectorizer
 
 from googletrans import Translator
 # pip install googletrans==4.0.0rc1
@@ -40,7 +40,7 @@ class NLPClass:
     def __init__(self):
         self.numero = 1
         
-    def translate_dictionary(self, df_translate=None, path=""):
+    def translations_dictionary(self, df_translate=None, path=""):
         '''
         It appends to a dictionary different animals names in spanish and 
         english languages. It adds them so that english animals names appear 
@@ -104,7 +104,7 @@ class NLPClass:
         df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["carancho"], 'english': ["caracara"]}), ignore_index = True)
 
         if df_translate is None:
-            df_auxiliar = df_auxiliar.copy(deep=True)
+            df_translate = df_auxiliar.copy(deep=True)
         else:
             for i,row in df_auxiliar.iterrows():
                 if row['spanish'] not in df_translate['spanish'].values:
@@ -190,7 +190,7 @@ class NLPClass:
                 
         return list(sorted_words.keys()),list(sorted_words.values())
         
-    def join_horizontally_strings(self, df, separator = " ", *args):
+    def join_horizontally_strings(self, df, column_list, separator = " "):
         '''
         It takes each df dataframe row and joins the content of each column 
         passed in *args separated by the separator parameter.
@@ -213,7 +213,7 @@ class NLPClass:
         lista=[]
         for i, row in df.iterrows():
             lista.append("")
-            for column in args:
+            for column in column_list:
                 lista[i] = lista[i] + row[column] + separator
             lista[i] = lista[i].rstrip()
                 
@@ -247,46 +247,61 @@ class NLPClass:
             translated_objects.append(translator.translate(element.replace("-"," "), src=lan_src, dest=lan_dest))
         return translated_objects
     
-    def get_pickle_and_translate(self, texts, hypernym_check = '', len_src = 'spanish', len_dest = 'english', path = ""):
-        '''
+    def translate_checking_wordnet_and_hypernym(self, texts, df_translate = None, hypernym_check = '', len_src = 'spanish', len_dest = 'english'):
         
-
+        '''
+        It receives a word list in len_src language and returns a dataframe 
+        with the original word list and its len_dest translation. If the 
+        original word doesn't have a translation that exists on WordNet synset
+        or the hypernym_check on the hypernym tree, it returns 
+        "no_translation".
         Parameters
         ----------
-        texts : TYPE
-            DESCRIPTION.
-        path : TYPE, optional
-            DESCRIPTION. The default is "".
+        texts : string list
+            list with words to translate.
+        df_translate : pandas.dataframe, optional
+            A dataframe with two columns: len_src with words in len_src language 
+            and len_dest with words in len_dest language. If it's not None, 
+            the rows are appended. Otherwise it's initialized and then the 
+            rows are appended.
+            The default is None
+        hypernym_check : string, optional
+            The synset to be checked if exists on translated hypernym tree. 
+            The default is "".
+        len_src : string, optional
+            Language source. 
+            The default is "spanish".
+        len_dest : string, optional
+            Language destiny.
+            he default is "english".
 
         Returns
         -------
-        df_translate : TYPE
-            DESCRIPTION.
+        df_translate : pandas.dataframe
+            Dataframe with two columns: len_src with words in len_src language 
+            and len_dest with words in len_dest language.
 
         '''
-        if path != "":
-            try:
-                df_translate = pd.read_pickle(path)
-            except (OSError, IOError):
-                df_translate = pd.DataFrame(columns=[len_src,len_dest])
-        else:
-            df_translate = pd.DataFrame(columns=[len_src,len_dest])
         
+        # If df_translate not exist, initialize it
+        if df_translate is None:
+            df_translate = pd.DataFrame(columns=[len_src,len_dest])
+                           
         for text in texts:
             if text not in df_translate[len_src].to_list():
                 try:
                     has_hyper = False
                     iter_translates = -1
-                    translation_object = nlp_class.translate([text])
+                    translation_object = nlp_class.translate([text]) # Get the translation_object with all posible translations
                     while (not has_hyper):
                         translated_synsets = []
                         while (len(translated_synsets)==0):
                             iter_translates+=1
-                            translated_word = translation_object[0].extra_data["parsed"][1][0][0][5][0][4][iter_translates][0].lower() # Extract a translation from object
+                            translated_word = translation_object[0].extra_data["parsed"][1][0][0][5][0][4][iter_translates][0].lower() # Extract a posible translation
                             translated_synsets = wn.synsets(translated_word.replace(" ","_"))
-                            translated_synsets = [x for x in translated_synsets if (".n.") in x.name().lower()]
+                            translated_synsets = [x for x in translated_synsets if (".n.") in x.name().lower()] # keep nouns only
                         if (hypernym_check != ''):
-                            synset_with_hypernym, _ = nlp_class.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check)
+                            synset_with_hypernym, _ = nlp_class.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check) # check if hypernym_check is part of translated_synsets hypernym tree
                             if (synset_with_hypernym is not None):
                                 has_hyper = True
                         else:
@@ -296,6 +311,7 @@ class NLPClass:
                     df_translate = df_translate.append(df2, ignore_index = True)
 
                 else:
+                    # Add translation to dictonary
                     df2 = pd.DataFrame({len_src: [text],len_dest: [translated_word]})
                     df_translate = df_translate.append(df2, ignore_index = True)
         return df_translate
@@ -333,36 +349,39 @@ class NLPClass:
                 break
         return synset_with_hyper, hypernyms
 
+###########################----------------------###########################
 # Testeo los métodos
-# cwd = 'D://Franco//Doctorado//Laboratorio//NLP' # path Franco escritorio
-cwd = 'C://Franco//NLP' # path Franco Udesa
+
+
+# Levanto la base de fluidez
+cwd = 'D://Franco//Doctorado//Laboratorio//NLP' # path Franco escritorio
+# cwd = 'C://Franco//NLP' # path Franco Udesa
+
 pickle_traduccion = '//Scripts//traducciones.pkl'
 df_pacientes = pd.ExcelFile(cwd+r'\Bases\Transcripciones fluidez.xlsx')
-
-
 df_pacientes = pd.read_excel(df_pacientes, 'Hoja 1')
-nlp_class = NLPClass()
 
+
+nlp_class = NLPClass()
 try:
     df_translate = pd.read_pickle(cwd+pickle_traduccion)
 except (OSError, IOError):
     df_translate = pd.DataFrame(columns=['spanish','english'])
     
-df_translate = nlp_class.translate_dictionary(df_translate, path = cwd+pickle_traduccion)
+df_translate = nlp_class.translations_dictionary(df_translate, path = cwd+pickle_traduccion)
 
-df_pacientes['fluency_animals_0_15_correctas_individuales'].fillna('', inplace=True)
-df_pacientes['fluency_animals_15_30_correctas_individuales'].fillna('', inplace=True)
-df_pacientes['fluency_animals_30_45_correctas_individuales'].fillna('', inplace=True)
-df_pacientes['fluency_animals_45_60_correctas_individuales'].fillna('', inplace=True)
+lista_columnas_concatenar = ['fluency_animals_0_15_correctas_individuales',
+                             'fluency_animals_15_30_correctas_individuales',
+                             'fluency_animals_30_45_correctas_individuales',
+                             'fluency_animals_45_60_correctas_individuales']
 
-resultado = nlp_class.join_horizontally_strings(df_pacientes, " ", 'fluency_animals_0_15_correctas_individuales',
-                            'fluency_animals_15_30_correctas_individuales',
-                            'fluency_animals_30_45_correctas_individuales',
-                            'fluency_animals_45_60_correctas_individuales')
+
+df_pacientes[lista_columnas_concatenar] = df_pacientes[lista_columnas_concatenar].fillna('')
+resultado = nlp_class.join_horizontally_strings(df_pacientes, lista_columnas_concatenar," ")
 
 lista_tokenizada = nlp_class.tokenize_list(resultado)
 unique_words, count_words = nlp_class.count_words(lista_tokenizada,0.8)
-df_translate = nlp_class.get_pickle_and_translate(unique_words, hypernym_check = "animal.n.01",len_src ="spanish", len_dest="english", path = cwd+pickle_traduccion)
+df_translate = nlp_class.translate_checking_wordnet_and_hypernym(unique_words, df_translate,hypernym_check = "animal.n.01",len_src ="spanish", len_dest="english")
 
 number_nodes = []
 for i,row in df_translate.iterrows():
@@ -391,7 +410,13 @@ df_translate['nodes'] = number_nodes
                 
                     
             
-
+        # if path != "":
+        #     try:
+        #         df_translate = pd.read_pickle(path)
+        #     except (OSError, IOError):
+        #         df_translate = pd.DataFrame(columns=[len_src,len_dest])
+        # else:
+        #     df_translate = pd.DataFrame(columns=[len_src,len_dest])
 
 # shortest = 0
 # for hipernyms in wn.synset('dog.n.1').hypernym_paths():
@@ -399,6 +424,6 @@ df_translate['nodes'] = number_nodes
         
 
 
-# df_translate.to_pickle(cwd+pickle_traduccion)
+df_translate.to_pickle(cwd+pickle_traduccion)
 
 
