@@ -316,19 +316,24 @@ class NLPClass:
                     df_translate = df_translate.append(df2, ignore_index = True)
         return df_translate
     
-    def check_hypernym(self, synset, hypernym_check = "animal.n.01", hyper = None):
+    def get_hypernyms_to(self, synset, hypernym_destiny = "animal.n.01"):
+        """
+        Check if the synset's hypernyms tree contains the hypernym_destiny
 
-        total_hypernyms = synset.hypernym_paths()
-        has_hyper = False
-        for hypernyms in total_hypernyms:
-            for hypernym in hypernyms:    
-                if (hypernym_check == hypernym.name()):
-                    has_hyper = True
-                    break
-        return has_hyper
-    
-    def get_hypernyms_to(self, synset, hypernym_destiny = "animal.n.01", hyper = None):
+        Parameters
+        ----------
+        synset : WordNet.synset
+            Synset to be checked.
+        hypernym_destiny : string, optional
+            Synset key to be searched in the synset's hypernyms tree. 
+            The default is "animal.n.01".
 
+        Returns
+        -------
+        hypernyms_to_destiny : synset list
+            A synset list from the original synset to the hypernym_destiny.
+
+        """
         total_hypernyms = synset.hypernym_paths()
         for hypernyms in total_hypernyms:
             hypernyms_to_destiny = []
@@ -339,11 +344,30 @@ class NLPClass:
         return None
 
     def get_synset_that_has_hypernym(self, synsets, hypernym_check = "animal.n.01"):
-        hyper = lambda s: s.hypernyms()
+        """
+        It receives a list of synsets and return the first synset that has the
+        hypernym_check in its hypernyms tree and the synset's hypernyms
+
+        Parameters
+        ----------
+        synsets : synset list
+            A list with synsets.
+        hypernym_check : string, optional
+            The synset to be searched in the hypernyms tree. 
+            The default is "animal.n.01".
+
+        Returns
+        -------
+        synset_with_hyper : synset
+            The first synset whose hypernyms tree contains the hypernym_check.
+        hypernyms : synset list
+            The synset_with_hyper's hypernyms tree.
+
+        """
         synset_with_hyper = None
         hypernyms = None
         for i in range(0,len(synsets)):
-            hypernyms = self.get_hypernyms_to(synsets[i], hypernym_destiny = "animal.n.01", hyper = hyper)
+            hypernyms = self.get_hypernyms_to(synsets[i], hypernym_destiny = hypernym_check)
             if (hypernyms is not None):
                 synset_with_hyper = synsets[i]
                 break
