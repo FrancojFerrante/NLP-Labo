@@ -41,36 +41,79 @@ class NLPClass:
         self.numero = 1
         
     def translate_dictionary(self, df_translate=None, path=""):
-        
+        '''
+        It appends to a dictionary different animals names in spanish and 
+        english languages. It adds them so that english animals names appear 
+        in WordNet synset. 
+
+        Parameters
+        ----------
+        df_translate : pandas.dataframe, optional.
+                If it's not None, the rows are appended. Otherwise it's 
+                initialized and then the rows are appended.
+                The default is None.
+        path : string, optional
+            The path where to save the pickle file with the dictionary. Unless
+            path is empty.
+            The default is "".
+
+        Returns
+        -------
+        df_translate : pandas.dataframe.
+            Pandas.dataframe with the new rows appended.
+
+        '''
+      
+        df_auxiliar = pd.DataFrame(columns=['spanish','english'])
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["yaguareté"], 'english': ["jaguar"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["llama"], 'english': ["llama"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["picaflor"], 'english': ["hummingbird"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["chita"], 'english': ["cheetah"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["torcaza"], 'english': ["dove"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["yacaré"], 'english': ["alligator"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["corvina"], 'english': ["croaker"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["vizcacha"], 'english': ["viscacha"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["orca"], 'english': ["killer_whale"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["barata"], 'english': ["german_cockroach"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["coipo"], 'english': ["coypu"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["cuncuna"], 'english': ["caterpillar"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["carpincho"], 'english': ["capybara"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["jote"], 'english': ["buzzard"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["zorzal"], 'english': ["fieldfare"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["guanaco"], 'english': ["guanaco"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["pejerrey"], 'english': ["silverside"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["mandril"], 'english': ["mandrill"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["peludo"], 'english': ["armadillo"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["chingue"], 'english': ["skunk"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["guaren"], 'english': ["brown_rat"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["cata"], 'english': ["budgerigar"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["bonito"], 'english': ["atlantic_bonito"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["cachalote"], 'english': ["sperm_whale"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["morena"], 'english': ["moray_eels"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["jaiba"], 'english': ["callinectes_sapidus"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["cervatillo"], 'english': ["fawn"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["mulita"], 'english': ["nine-banded_armadillo"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["carpintero"], 'english': ["woodpecker"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["centolla"], 'english': ["maja_squinado"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["palometa"], 'english': ["pomfret"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["suricata"], 'english': ["meerkat"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["vampiro"], 'english': ["vampire_bats"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["laucha"], 'english': ["mouse"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["guanaco"], 'english': ["guanaco"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["vicuña"], 'english': ["vicuna"]}), ignore_index = True)
+        df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["carancho"], 'english': ["caracara"]}), ignore_index = True)
+
         if df_translate is None:
-            df_translate = pd.DataFrame(columns=['spanish','english'])
-        
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["yaguareté"], 'english': ["jaguar"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["llama"], 'english': ["llama"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["picaflor"], 'english': ["hummingbird"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["chita"], 'english': ["cheetah"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["torcaza"], 'english': ["dove"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["yacaré"], 'english': ["alligator"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["corvina"], 'english': ["croaker"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["vizcacha"], 'english': ["viscacha"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["orca"], 'english': ["killer_whale"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["barata"], 'english': ["german_cockroach"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["coipo"], 'english': ["coypu"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["cuncuna"], 'english': ["caterpillar"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["carpincho"], 'english': ["capybara"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["jote"], 'english': ["buzzard"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["zorzal"], 'english': ["fieldfare"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["guanaco"], 'english': ["guanaco"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["pejerrey"], 'english': ["silverside"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["mandril"], 'english': ["mandrill"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["peludo"], 'english': ["armadillo"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["chingue"], 'english': ["skunk"]}), ignore_index = True)
-        df_translate = df_translate.append(pd.DataFrame({'spanish': ["guaren"], 'english': ["brown_rat"]}), ignore_index = True)
+            df_auxiliar = df_auxiliar.copy(deep=True)
+        else:
+            for i,row in df_auxiliar.iterrows():
+                if row['spanish'] not in df_translate['spanish'].values:
+                    df_translate = df_translate.append(row)
 
+            
 
-        
-
-
+            # df_translate = pd.concat([df_translate, df_auxiliar.ix[df_auxiliar._merge=='left_only', ['spanish']]])
+          
         if (path != ""):
             df_translate.to_pickle(path)
 
@@ -78,57 +121,58 @@ class NLPClass:
 
     def tokenize_list(self, text_dataframe, tokenizer_type = "basic_english"):
       '''
-      Recibe una lista de strings y devuelve 
+      It receives a list of strings and returns a list of string list where 
+      each string is a token obteined from apply the tokenizer_type.
 
       Parameters
       ----------
-      text_dataframe : list
-          Una lista de strings donde cada elemento tiene palabras separadas 
-          por espacios.
-          
-      tokenizer_type : el tipo de tokenizador a utilizar, si no se especifica,
-      usa basic_english. Otros tipos podrían ser: spacy, moses, toktok,revtok,
-      subword.
+      text_dataframe : string list
+          A string list where each element has words separated by spaces.
+    
+      tokenizer_type : 
+          The kind of tokenizer to be applied. Basic_english applied by 
+          default. Other tokenizers could be: spacy, moses, toktok, revtok, 
+          subword.
 
       Returns
       -------
-      tokens : list
-          Una lista donde cada elemento es una lista que contiene un token.
-
+      tokens : list of string list
+          A list where each element is a list that contains tokens.
       '''
+      
       tokenizer = get_tokenizer(tokenizer_type)
       tokens = [tokenizer(s) for s in text_dataframe]
       return tokens
   
     def count_words(self, tokens, percentaje = 0):
         '''
-        Devuelve una lista de palabras únicas extraídas del parámetro tokens y
-        la cantidad de veces que se repite cada una ordenadas descendientemente.
+        It returns a word unique list extracted from tokens parameter and the
+        number of times that each word appear in descendingly ordered.
 
         Parameters
         ----------
         tokens : list of token list
-            Una lista donde cada elemento es una lista de tokens.
+            A list where each element is a token list.
         
         percentaje: int
-            Entero entre 0 y 1. 
-            Si es 0, no imprime nada. 
-            Si es mayor a 0, imprime por consola qué cantidad de palabras más
-            comunes (en porcentaje) superan el percentaje pasado por parámetro.
+            Int between 0 and 1.
+            If it is 0, it doesn't print anything. 
+            If it is greater than 0, it prints by console how many of 
+            the most common words (in percentage) exceed the percentage passed 
+            by parameter.
             
         Returns
         -------
-        La lista única de palabras y la cantidad de veces que aparece cada una.
+        The word unique list and the number of times that each one appear.
 
         '''
+        
         words = Counter()
         for s in tokens:
             for w in s:
                 words[w] += 1
                 
         sorted_words = OrderedDict(words.most_common())
-        # sorted_words = list(words.keys())
-        # sorted_words.sort(key=lambda w: words[w], reverse=True)
         
         if (percentaje>0):
             count_occurences = sum(words.values())
@@ -148,23 +192,24 @@ class NLPClass:
         
     def join_horizontally_strings(self, df, separator = " ", *args):
         '''
-        Toma cada fila del dataframe df, y une el contenido de cada columna
-        pasada en *args separada por el parámetro separator
+        It takes each df dataframe row and joins the content of each column 
+        passed in *args separated by the separator parameter.
 
         Parameters
         ----------
         df : pandas.dataframe
-            El dataframe que contiene las columnas a ser unidas.
+            Dataframe that contains the columns to join.
         *args : string
-            Los nombres de las columnas que quieren ser unidos.
+            The columns names to be joined.
 
         Returns
         -------
         lista : list of strings
-            Una lista donde en cada fila tiene la unión entre las distintas
-            columnas pasadas en *args separadas por separator.
+            A list where each row has the union between the different columns 
+            passed in * args separated by separator.
 
         '''
+        
         lista=[]
         for i, row in df.iterrows():
             lista.append("")
@@ -174,112 +219,136 @@ class NLPClass:
                 
         return lista
     
-    def translate(self, text, lan_src = 'es', lan_dest = 'en'):
-        
+    def translate(self, text, lan_src = 'spanish', lan_dest = 'english'):
+        '''
+        It translates text from one language to another using googletrans.
+
+        Parameters
+        ----------
+        text : string list
+            Strings to be translated.
+        lan_src : string, optional.
+            The language source. 
+            The default is 'es'.
+        lan_dest : string, optional
+            The language destiny. 
+            The default is 'en'.
+
+        Returns
+        -------
+        text_translate : translated_object list
+            A list where each element is a translation from each text list 
+            element.
+
+        '''
         translator = Translator()
-        text_translate = []
+        translated_objects = []
         for element in text:
-            text_translate.append(translator.translate(element.replace("-"," "), src=lan_src, dest=lan_dest))
-        return text_translate
+            translated_objects.append(translator.translate(element.replace("-"," "), src=lan_src, dest=lan_dest))
+        return translated_objects
     
-    def get_pickle_and_translate(self,texts,path = ""):
+    def get_pickle_and_translate(self, texts, hypernym_check = '', len_src = 'spanish', len_dest = 'english', path = ""):
+        '''
+        
+
+        Parameters
+        ----------
+        texts : TYPE
+            DESCRIPTION.
+        path : TYPE, optional
+            DESCRIPTION. The default is "".
+
+        Returns
+        -------
+        df_translate : TYPE
+            DESCRIPTION.
+
+        '''
         if path != "":
             try:
                 df_translate = pd.read_pickle(path)
-            except (OSError, IOError) as e:
-                df_translate = pd.DataFrame(columns=['spanish','english'])
+            except (OSError, IOError):
+                df_translate = pd.DataFrame(columns=[len_src,len_dest])
         else:
-            df_translate = pd.DataFrame(columns=['spanish','english'])
+            df_translate = pd.DataFrame(columns=[len_src,len_dest])
         
-        hyper = lambda s: s.hypernyms()
         for text in texts:
-            
-            if text not in df_translate['spanish'].to_list():
+            if text not in df_translate[len_src].to_list():
                 try:
-                    es_animal = False
-                    iter_traducciones = -1
-                    traduccion = nlp_class.translate([text])
-                    while (not es_animal):
-                        palabras = []
-                        while (len(palabras)==0):
-                            iter_traducciones+=1
-                            palabra_traducida = traduccion[0].extra_data["parsed"][1][0][0][5][0][4][iter_traducciones][0].lower()
-                            palabras = wn.synsets(palabra_traducida)
-                            palabras = [x for x in palabras if (".n.") in x.name().lower()]
-                        iterador = -1
-                        for i in range(0,len(palabras)):
-                            # list(palabras[iterador].closure(hyper, depth=1)) == palabras[iterador].hypernyms()
-                            hiperonimos = list(palabras[i].closure(hyper))
-                            for hiperonimo in hiperonimos:    
-                                if ("animal.n.01" == hiperonimo.name()):
-                                    es_animal = True
-                                    break
-                            if es_animal:
-                                break
-    
+                    has_hyper = False
+                    iter_translates = -1
+                    translation_object = nlp_class.translate([text])
+                    while (not has_hyper):
+                        translated_synsets = []
+                        while (len(translated_synsets)==0):
+                            iter_translates+=1
+                            translated_word = translation_object[0].extra_data["parsed"][1][0][0][5][0][4][iter_translates][0].lower() # Extract a translation from object
+                            translated_synsets = wn.synsets(translated_word.replace(" ","_"))
+                            translated_synsets = [x for x in translated_synsets if (".n.") in x.name().lower()]
+                        if (hypernym_check != ''):
+                            synset_with_hypernym, _ = nlp_class.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check)
+                            if (synset_with_hypernym is not None):
+                                has_hyper = True
+                        else:
+                            has_hyper = True
                 except:
-                    df2 = pd.DataFrame({'spanish': [text],'english': "no_hay_traduccion"})
+                    df2 = pd.DataFrame({len_src: [text],len_dest: "no_translation"})
                     df_translate = df_translate.append(df2, ignore_index = True)
 
                 else:
-                    df2 = pd.DataFrame({'spanish': [text],'english': palabra_traducida})
+                    df2 = pd.DataFrame({len_src: [text],len_dest: [translated_word]})
                     df_translate = df_translate.append(df2, ignore_index = True)
-
-        # print(text + str(list(hiperonimos)))
-                
-    
-                
-                
-                
-                
-                
-                # hyper = lambda s: s.hypernyms()
-                # for i,row in df_translate.iterrows():
-                #     palabras = wn.synsets(row['english'])
-                #     palabras = [x for x in palabras if ".n." in x.name()]
-                #     if (len(palabras)==0):
-                #         translator = Translator()
-                #         respuesta = translator.translate(row['spanish'], src="es", dest="en")
-                #         palabras = wn.synsets(respuesta.extra_data["parsed"][1][0][0][5][0][4][1][0])
-                #         palabras = [x for x in palabras if ".n." in x.name()]
-                #     es_animal = False
-                #     iterador = -1
-                #     while not es_animal:
-                #         # list(palabras[iterador].closure(hyper, depth=1)) == palabras[iterador].hypernyms()
-                #         iterador +=1
-                #         hiperonimos = list(palabras[iterador].closure(hyper))
-                #         for hiperonimo in hiperonimos:    
-                #             if ("animal.n.01" == hiperonimo.name()):
-                #                 es_animal = True
-                #     print(row['english'] + str(list(palabras[iterador].closure(hyper))))
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
         return df_translate
+    
+    def check_hypernym(self, synset, hypernym_check = "animal.n.01", hyper = None):
 
+        total_hypernyms = synset.hypernym_paths()
+        has_hyper = False
+        for hypernyms in total_hypernyms:
+            for hypernym in hypernyms:    
+                if (hypernym_check == hypernym.name()):
+                    has_hyper = True
+                    break
+        return has_hyper
+    
+    def get_hypernyms_to(self, synset, hypernym_destiny = "animal.n.01", hyper = None):
 
+        total_hypernyms = synset.hypernym_paths()
+        for hypernyms in total_hypernyms:
+            hypernyms_to_destiny = []
+            for hypernym in hypernyms:
+                hypernyms_to_destiny.append(hypernym)
+                if (hypernym_destiny == hypernym.name()):
+                    return hypernyms_to_destiny
+        return None
+
+    def get_synset_that_has_hypernym(self, synsets, hypernym_check = "animal.n.01"):
+        hyper = lambda s: s.hypernyms()
+        synset_with_hyper = None
+        hypernyms = None
+        for i in range(0,len(synsets)):
+            hypernyms = self.get_hypernyms_to(synsets[i], hypernym_destiny = "animal.n.01", hyper = hyper)
+            if (hypernyms is not None):
+                synset_with_hyper = synsets[i]
+                break
+        return synset_with_hyper, hypernyms
 
 # Testeo los métodos
 # cwd = 'D://Franco//Doctorado//Laboratorio//NLP' # path Franco escritorio
 cwd = 'C://Franco//NLP' # path Franco Udesa
-pickle_traduccion = '//Scripts//traduccionesasasa.pkl'
+pickle_traduccion = '//Scripts//traducciones.pkl'
 df_pacientes = pd.ExcelFile(cwd+r'\Bases\Transcripciones fluidez.xlsx')
 
 
 df_pacientes = pd.read_excel(df_pacientes, 'Hoja 1')
 nlp_class = NLPClass()
 
-resul = nlp_class.translate_dictionary(path=cwd+pickle_traduccion)
+try:
+    df_translate = pd.read_pickle(cwd+pickle_traduccion)
+except (OSError, IOError):
+    df_translate = pd.DataFrame(columns=['spanish','english'])
+    
+df_translate = nlp_class.translate_dictionary(df_translate, path = cwd+pickle_traduccion)
 
 df_pacientes['fluency_animals_0_15_correctas_individuales'].fillna('', inplace=True)
 df_pacientes['fluency_animals_15_30_correctas_individuales'].fillna('', inplace=True)
@@ -293,32 +362,43 @@ resultado = nlp_class.join_horizontally_strings(df_pacientes, " ", 'fluency_anim
 
 lista_tokenizada = nlp_class.tokenize_list(resultado)
 unique_words, count_words = nlp_class.count_words(lista_tokenizada,0.8)
-df_translate = nlp_class.get_pickle_and_translate(unique_words,cwd+pickle_traduccion)
-# df_translate = nlp_class.get_pickle_and_translate(unique_words[34:40])
+df_translate = nlp_class.get_pickle_and_translate(unique_words, hypernym_check = "animal.n.01",len_src ="spanish", len_dest="english", path = cwd+pickle_traduccion)
+
+number_nodes = []
+for i,row in df_translate.iterrows():
+    translated_synsets = wn.synsets(row['english'].replace(" ","_"))
+    synset_with_hypernym, _ = nlp_class.get_synset_that_has_hypernym(translated_synsets, hypernym_check = "animal.n.01")
+    if synset_with_hypernym is not None:
+        total_hypernyms = synset_with_hypernym.hypernym_paths()
+        min_distancia = 1000
+        for hypernyms in total_hypernyms:
+            distancia = 0
+            if wn.synset("animal.n.01") in hypernyms:
+                hypernyms.reverse()
+                for hypernym in hypernyms:
+                    if wn.synset("animal.n.01") != hypernym:
+                        distancia +=1
+                    else:
+                        distancia +=1
+                        break
+                if distancia<min_distancia:
+                    min_distancia = distancia
+        number_nodes.append(min_distancia)
+    else:
+        number_nodes.append(1000)
+df_translate['nodes'] = number_nodes
+
+                
+                    
+            
 
 
-# hyper = lambda s: s.hypernyms()
-# for i,row in df_translate.iterrows():
-#     palabras = wn.synsets(row['english'])
-#     palabras = [x for x in palabras if ".n." in x.name()]
-#     if (len(palabras)==0):
-#         translator = Translator()
-#         respuesta = translator.translate(row['spanish'], src="es", dest="en")
-#         palabras = wn.synsets(respuesta.extra_data["parsed"][1][0][0][5][0][4][1][0])
-#         palabras = [x for x in palabras if ".n." in x.name()]
-#     es_animal = False
-#     iterador = -1
-#     while not es_animal:
-#         # list(palabras[iterador].closure(hyper, depth=1)) == palabras[iterador].hypernyms()
-#         iterador +=1
-#         hiperonimos = list(palabras[iterador].closure(hyper))
-#         for hiperonimo in hiperonimos:    
-#             if ("animal.n.01" == hiperonimo.name()):
-#                 es_animal = True
-#     print(row['english'] + str(list(palabras[iterador].closure(hyper))))
+# shortest = 0
+# for hipernyms in wn.synset('dog.n.1').hypernym_paths():
+#     for hypernym in hipernyms:
+        
 
 
-
-df_translate.to_pickle(cwd+pickle_traduccion)
+# df_translate.to_pickle(cwd+pickle_traduccion)
 
 
