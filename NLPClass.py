@@ -211,12 +211,13 @@ class NLPClass:
         '''
         
         lista=[]
+        contador = 0
         for i, row in df.iterrows():
             lista.append("")
             for column in column_list:
-                lista[i] = lista[i] + row[column] + separator
-            lista[i] = lista[i].rstrip()
-                
+                lista[contador] = lista[contador] + row[column] + separator
+            lista[contador] = lista[contador].rstrip()
+            contador+=1
         return lista
     
     def translate(self, text, lan_src = 'spanish', lan_dest = 'english'):
@@ -412,6 +413,48 @@ class NLPClass:
             return min_distancia
         else:
             return -1
+    
+    def semantic_words_distance(self, u,v):
+        """
+        Given two vectors, it calculates the semantic word distance as the 
+        cosine of the angle between the two vectors as (Sanz et al. 2021)
+
+        Parameters
+        ----------
+        u : float list
+            A word embedding.
+        v : float list
+            A word embedding.
+
+        Returns
+        -------
+        float
+            The semantic word distance between u and v.
+
+        """
+        return 1-(np.dot(u,v)/(np.linalg.norm(u)*np.linalg.norm(v)))
+    
+    def ongoing_semantic_variability(self, vector_distances):
+        """
+        Given a vector, it calculates the ongoing semantic variability as defined at
+        (Sanz et al. 2021)
+
+        Parameters
+        ----------
+        vector_distances : float list
+            A list where each float element represents the semantic distance 
+            between two words.
+
+        Returns
+        -------
+        average : float list
+            A list where each float element represents the ongoing semantic
+            variability.
+
+        """
+        summation = sum((vector_distances-np.mean(vector_distances))*(vector_distances-np.mean(vector_distances)))
+        average = summation/(len(vector_distances)-1)
+        return average
         
 ###########################----------------------###########################
 # Testeo los métodos
@@ -424,7 +467,7 @@ cwd = 'D://Franco//Doctorado//Laboratorio//NLP' # path Franco escritorio
 pickle_traduccion = '//Scripts//traducciones.pkl'
 df_pacientes = pd.ExcelFile(cwd+r'\Bases\Transcripciones fluidez.xlsx')
 df_pacientes = pd.read_excel(df_pacientes, 'Hoja 1')
-
+df_pacientes = df_pacientes.drop(df_pacientes[df_pacientes["Estado"] != "Completo"].index)
 
 nlp_class = NLPClass()
 try:
@@ -474,10 +517,9 @@ import fasttext.util
 ######### First time only ###########
 # fasttext.util.download_model('es', if_exists='ignore')  # English
 ft = fasttext.load_model('cc.es.300.bin')
-ft.save_model('cc.es.300.bin')
+# ft.save_model('cc.es.300.bin') # First time only
 
-#%%
-
+#%% Convierto a word embedding cada palabra dicha por cada paciente.
 
 words_vector = list()
 for i_lista,word_list in enumerate(lista_tokenizada):
@@ -485,28 +527,20 @@ for i_lista,word_list in enumerate(lista_tokenizada):
     for i_word,word in enumerate(word_list):
         words_vector[i_lista].append(ft.get_word_vector(word))
 
-# %% 
-
-def words_distance(u,v):
-    return 1-(np.dot(u,v)/(np.linalg.norm(u)*np.linalg.norm(v)))
-
+# %% Calculo la distancia semántica entre cada palabra contigua dicha por cada paciente.
 words_distances = list()
 for i_lista, vector_list in enumerate(words_vector):
     words_distances.append([])
     for i_vector,vector in enumerate(vector_list):
         if(i_vector!=0):
-            resultado = words_distance(vector_list[i_vector-1],vector_list[i_vector])
+            resultado = nlp_class.words_distance(vector_list[i_vector-1],vector_list[i_vector])
             words_distances[i_lista].append(resultado)
         
-# %%
-def ongoing_semantic_variability(vector_distances):
-    sumatoria = sum((vector_distances-np.mean(vector_distances))*(vector_distances-np.mean(vector_distances)))
-    promedio = sumatoria/(len(vector_distances)-1)
-    return promedio
+# %% Calculo la Ongoing Semantic Variability de cada paciente.
 
 ongoing_semantic = list()
-for elemento in words_distances:
-    ongoing_semantic.append(ongoing_semantic_variability(elemento))
+for words in words_distances:
+    ongoing_semantic.append(nlp_class.ongoing_semantic_variability(words))
         
         
         
