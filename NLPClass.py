@@ -372,7 +372,47 @@ class NLPClass:
                 synset_with_hyper = synsets[i]
                 break
         return synset_with_hyper, hypernyms
+    
+    def hypernym_min_nodes_distance_from_synset_to_hypernym(self, word, hypernym_check = "animal.n.01"):
+        """
+        It calculates the number of nodes from the word synset to the hypernym_check 
+        in the hypernyms tree.
 
+        Parameters
+        ----------
+        word : string
+            Word from starting node.
+        hypernym_check : string, optional
+            Synset key to be searched in the hypernyms tree. 
+            The default is "animal.n.01".
+
+        Returns
+        -------
+        int
+            Number of nodes from word to hypernym_check.
+
+        """
+        min_distancia = 100000
+        translated_synsets = wn.synsets(word.replace(" ","_"))
+        synset_with_hypernym, _ = nlp_class.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check)
+        if synset_with_hypernym is not None:
+            total_hypernyms = synset_with_hypernym.hypernym_paths()
+            for hypernyms in total_hypernyms:
+                distancia = 0
+                if wn.synset(hypernym_check) in hypernyms:
+                    hypernyms.reverse()
+                    for hypernym in hypernyms:
+                        if wn.synset(hypernym_check) != hypernym:
+                            distancia +=1
+                        else:
+                            distancia +=1
+                            break
+                    if distancia<min_distancia:
+                        min_distancia = distancia
+            return min_distancia
+        else:
+            return -1
+        
 ###########################----------------------###########################
 # Testeo los métodos
 
@@ -399,55 +439,85 @@ lista_columnas_concatenar = ['fluency_animals_0_15_correctas_individuales',
                              'fluency_animals_30_45_correctas_individuales',
                              'fluency_animals_45_60_correctas_individuales']
 
-
+# Reemplazo los Nans por espacios vacíos y concateno horizontalmente las columnas anteriores.
 df_pacientes[lista_columnas_concatenar] = df_pacientes[lista_columnas_concatenar].fillna('')
 resultado = nlp_class.join_horizontally_strings(df_pacientes, lista_columnas_concatenar," ")
 
+# Tokenizo las filas resultantes
 lista_tokenizada = nlp_class.tokenize_list(resultado)
-unique_words, count_words = nlp_class.count_words(lista_tokenizada,0.8)
+# Obtengo los tokens únicos y la cantidad de veces que aparece cada uno.
+unique_words, count_words = nlp_class.count_words(lista_tokenizada,0.8) 
+# Obtengo un dataframe donde la primer columna tiene las palabras originales y la segunda columna las palabras traducidas. Esta función se asegura que 
+# cada traducción tenga un synset en WordNet. En caso que no exista, devuelve "no_translation"
 df_translate = nlp_class.translate_checking_wordnet_and_hypernym(unique_words, df_translate,hypernym_check = "animal.n.01",len_src ="spanish", len_dest="english")
+
+
 
 number_nodes = []
 for i,row in df_translate.iterrows():
-    translated_synsets = wn.synsets(row['english'].replace(" ","_"))
-    synset_with_hypernym, _ = nlp_class.get_synset_that_has_hypernym(translated_synsets, hypernym_check = "animal.n.01")
-    if synset_with_hypernym is not None:
-        total_hypernyms = synset_with_hypernym.hypernym_paths()
-        min_distancia = 1000
-        for hypernyms in total_hypernyms:
-            distancia = 0
-            if wn.synset("animal.n.01") in hypernyms:
-                hypernyms.reverse()
-                for hypernym in hypernyms:
-                    if wn.synset("animal.n.01") != hypernym:
-                        distancia +=1
-                    else:
-                        distancia +=1
-                        break
-                if distancia<min_distancia:
-                    min_distancia = distancia
-        number_nodes.append(min_distancia)
-    else:
-        number_nodes.append(1000)
+    number_nodes.append(nlp_class.hypernym_min_nodes_distance_from_synset_to_hypernym(row['english'], hypernym_check = "animal.n.01"))
+    
 df_translate['nodes'] = number_nodes
-
-                
-                    
-            
-        # if path != "":
-        #     try:
-        #         df_translate = pd.read_pickle(path)
-        #     except (OSError, IOError):
-        #         df_translate = pd.DataFrame(columns=[len_src,len_dest])
-        # else:
-        #     df_translate = pd.DataFrame(columns=[len_src,len_dest])
-
-# shortest = 0
-# for hipernyms in wn.synset('dog.n.1').hypernym_paths():
-#     for hypernym in hipernyms:
-        
-
+       
 
 df_translate.to_pickle(cwd+pickle_traduccion)
 
 
+
+
+
+
+# %% Download and load fasttext model
+
+import fasttext.util
+
+######### First time only ###########
+# fasttext.util.download_model('es', if_exists='ignore')  # English
+ft = fasttext.load_model('cc.es.300.bin')
+ft.save_model('cc.es.300.bin')
+
+#%%
+
+
+words_vector = list()
+for i_lista,word_list in enumerate(lista_tokenizada):
+    words_vector.append([])
+    for i_word,word in enumerate(word_list):
+        words_vector[i_lista].append(ft.get_word_vector(word))
+
+# %% 
+
+def words_distance(u,v):
+    return 1-(np.dot(u,v)/(np.linalg.norm(u)*np.linalg.norm(v)))
+
+words_distances = list()
+for i_lista, vector_list in enumerate(words_vector):
+    words_distances.append([])
+    for i_vector,vector in enumerate(vector_list):
+        if(i_vector!=0):
+            resultado = words_distance(vector_list[i_vector-1],vector_list[i_vector])
+            words_distances[i_lista].append(resultado)
+        
+# %%
+def ongoing_semantic_variability(vector_distances):
+    sumatoria = sum((vector_distances-np.mean(vector_distances))*(vector_distances-np.mean(vector_distances)))
+    promedio = sumatoria/(len(vector_distances)-1)
+    return promedio
+
+ongoing_semantic = list()
+for elemento in words_distances:
+    ongoing_semantic.append(ongoing_semantic_variability(elemento))
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
