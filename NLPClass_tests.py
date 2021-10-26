@@ -113,7 +113,7 @@ for i_lista, vector_list in enumerate(words_vector):
     words_distances.append([])
     for i_vector,vector in enumerate(vector_list):
         if(i_vector!=0):
-            resultado = nlp_class.words_distance(vector_list[i_vector-1],vector_list[i_vector])
+            resultado = nlp_class.semantic_words_distance(vector_list[i_vector-1],vector_list[i_vector])
             words_distances[i_lista].append(resultado)
         
 # %% Calculo la Ongoing Semantic Variability de cada paciente.
