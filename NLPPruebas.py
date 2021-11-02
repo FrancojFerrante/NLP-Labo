@@ -5,45 +5,31 @@ Created on Tue Sep 14 15:43:43 2021
 @author: franc
 """
 
-# from nltk.corpus import wordnet as wn
-
-# def hiperonimo_cadena(word, number):
-#     global contador
-#     if (word=='canine'):
-#         contador = contador + 1
-#         return
-#     for ss in wn.synsets(word):
-#         print("hiperonimo: " + str(number) + " -",ss)
-#         for hyper in ss.hypernyms():
-#             print("hiponimo: " + str(number+1) + " -",hyper)
-#             hiperonimo_cadena(hyper.name().split('.')[0],number+1)
-        
-
-
-# contador = 0
-# # hiperonimo_cadena('dog', 0)
-
-
-
-# dog = wn.synset('chimpanzee.n.01')
-# # hypo = lambda s: s.hyponyms()
-# hyper = lambda s: s.hypernyms()
-# # list(dog.closure(hypo, depth=1)) == dog.hyponyms()
-# list(dog.closure(hyper, depth=1)) == dog.hypernyms()
-# print(list(dog.closure(hyper)))
-
 import nltk
 import os
+import pandas as pd
+import NLPClass
 
-cwd = 'D://Franco//Doctorado//Laboratorio//NLP'
-path = cwd + "//Scripts//MCR//wordnet_spa"
-wncr = nltk.corpus.reader.wordnet.WordNetCorpusReader(path, None)
-palabra = wncr.synset("perro.n.01")
+# Levanto la base de fluidez
+cwd = 'D://Franco//Doctorado//Laboratorio//BasesFluidezFonoYSeman//TranscripcionesChi' # path Franco escritorio
+# cwd = 'C://Franco//NLP' # path Franco Udesa
 
-hyper = lambda s: s.hypernyms()
-list(palabra.closure(hyper, depth=1)) == palabra.hypernyms()
-print(list(palabra.closure(hyper)))
+df_pacientes = pd.ExcelFile(cwd+r'\transcripciones_fluidez-flor_alifano_fas.xlsx')
+df_pacientes = pd.read_excel(df_pacientes, 'Hoja 1')
 
+lista_columnas_concatenar = ['fluency_a_0_15_todo',
+                             'fluency_a_15_30_todo',
+                             'fluency_a_30_45_todo',
+                             'fluency_a_45_60_todo']
 
+nlp_class = NLPClass.NLPClass()
 
+# Reemplazo los Nans por espacios vacíos y concateno horizontalmente las columnas anteriores.
+df_pacientes[lista_columnas_concatenar] = df_pacientes[lista_columnas_concatenar].fillna('')
+resultado = nlp_class.join_horizontally_strings(df_pacientes, lista_columnas_concatenar," ")
 
+# Tokenizo las filas resultantes
+lista_tokenizada = nlp_class.tokenize_list(resultado)
+
+# Obtengo los tokens únicos y la cantidad de veces que aparece cada uno.
+unique_words, count_words = nlp_class.count_words(lista_tokenizada,0.8) 

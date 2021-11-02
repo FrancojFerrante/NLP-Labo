@@ -293,7 +293,7 @@ class NLPClass:
                 try:
                     has_hyper = False
                     iter_translates = -1
-                    translation_object = nlp_class.translate([text]) # Get the translation_object with all posible translations
+                    translation_object = self.translate([text]) # Get the translation_object with all posible translations
                     while (not has_hyper):
                         translated_synsets = []
                         while (len(translated_synsets)==0):
@@ -302,7 +302,7 @@ class NLPClass:
                             translated_synsets = wn.synsets(translated_word.replace(" ","_"))
                             translated_synsets = [x for x in translated_synsets if (".n.") in x.name().lower()] # keep nouns only
                         if (hypernym_check != ''):
-                            synset_with_hypernym, _ = nlp_class.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check) # check if hypernym_check is part of translated_synsets hypernym tree
+                            synset_with_hypernym, _ = self.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check) # check if hypernym_check is part of translated_synsets hypernym tree
                             if (synset_with_hypernym is not None):
                                 has_hyper = True
                         else:
