@@ -92,32 +92,35 @@ df_translate.to_pickle(cwd+pickle_traduccion)
 
 # %% Download and load fasttext model
 
-import fasttext.util
 
-######### First time only ###########
-# fasttext.util.download_model('es', if_exists='ignore')  # English
-ft = fasttext.load_model('cc.es.300.bin')
-# ft.save_model('cc.es.300.bin') # First time only
+ongoing_semantic_list = nlp_class.ongoing_semantic_variability_complete(lista_tokenizada)
 
-#%% Convierto a word embedding cada palabra dicha por cada paciente.
+# import fasttext.util
 
-words_vector = list()
-for i_lista,word_list in enumerate(lista_tokenizada):
-    words_vector.append([])
-    for i_word,word in enumerate(word_list):
-        words_vector[i_lista].append(ft.get_word_vector(word))
+# ######### First time only ###########
+# # fasttext.util.download_model('es', if_exists='ignore')  # English
+# ft = fasttext.load_model('cc.es.300.bin')
+# # ft.save_model('cc.es.300.bin') # First time only
 
-# %% Calculo la distancia semántica entre cada palabra contigua dicha por cada paciente.
-words_distances = list()
-for i_lista, vector_list in enumerate(words_vector):
-    words_distances.append([])
-    for i_vector,vector in enumerate(vector_list):
-        if(i_vector!=0):
-            resultado = nlp_class.semantic_words_distance(vector_list[i_vector-1],vector_list[i_vector])
-            words_distances[i_lista].append(resultado)
+# #%% Convierto a word embedding cada palabra dicha por cada paciente.
+
+# words_vector = list()
+# for i_lista,word_list in enumerate(lista_tokenizada):
+#     words_vector.append([])
+#     for i_word,word in enumerate(word_list):
+#         words_vector[i_lista].append(ft.get_word_vector(word))
+
+# # %% Calculo la distancia semántica entre cada palabra contigua dicha por cada paciente.
+# words_distances = list()
+# for i_lista, vector_list in enumerate(words_vector):
+#     words_distances.append([])
+#     for i_vector,vector in enumerate(vector_list):
+#         if(i_vector!=0):
+#             resultado = nlp_class.semantic_words_distance(vector_list[i_vector-1],vector_list[i_vector])
+#             words_distances[i_lista].append(resultado)
         
-# %% Calculo la Ongoing Semantic Variability de cada paciente.
+# # %% Calculo la Ongoing Semantic Variability de cada paciente.
 
-ongoing_semantic = list()
-for words in words_distances:
-    ongoing_semantic.append(nlp_class.ongoing_semantic_variability(words))
+# ongoing_semantic = list()
+# for words in words_distances:
+#     ongoing_semantic.append(nlp_class.ongoing_semantic_variability(words))
