@@ -28,17 +28,16 @@ import fasttext.util
 class NLPClass:
     def __init__(self):
         self.numero = 1
-        
     def translations_dictionary(self, df_translate=None, path=""):
         '''
-        It appends to a dictionary different animals names in spanish and 
-        english languages. It adds them so that english animals names appear 
-        in WordNet synset. 
+        It appends to a dictionary different animals names in spanish and
+        english languages. It adds them so that english animals names appear
+        in WordNet synset.
 
         Parameters
         ----------
         df_translate : pandas.dataframe, optional.
-                If it's not None, the rows are appended. Otherwise it's 
+                If it's not None, the rows are appended. Otherwise it's
                 initialized and then the rows are appended.
                 The default is None.
         path : string, optional
@@ -52,7 +51,7 @@ class NLPClass:
             Pandas.dataframe with the new rows appended.
 
         '''
-      
+
         df_auxiliar = pd.DataFrame(columns=['spanish','english'])
         df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["yaguareté"], 'english': ["jaguar"]}), ignore_index = True)
         df_auxiliar = df_auxiliar.append(pd.DataFrame({'spanish': ["llama"], 'english': ["llama"]}), ignore_index = True)
@@ -110,7 +109,7 @@ class NLPClass:
 
     def tokenize_list(self, text_dataframe, tokenizer_type = "basic_english"):
       '''
-      It receives a list of strings and returns a list of string list where 
+      It receives a list of strings and returns a list of string list where
       each string is a token obteined from apply the tokenizer_type.
 
       Parameters
@@ -236,30 +235,28 @@ class NLPClass:
         for element in text:
             translated_objects.append(translator.translate(element.replace("-"," "), src=lan_src, dest=lan_dest))
         return translated_objects
-    
     def translate_checking_wordnet_and_hypernym(self, texts, df_translate = None, hypernym_check = '', len_src = 'spanish', len_dest = 'english'):
-        
         '''
-        It receives a word list in len_src language and returns a dataframe 
-        with the original word list and its len_dest translation. If the 
+        It receives a word list in len_src language and returns a dataframe
+        with the original word list and its len_dest translation. If the
         original word doesn't have a translation that exists on WordNet synset
-        or the hypernym_check on the hypernym tree, it returns 
+        or the hypernym_check on the hypernym tree, it returns
         "no_translation".
         Parameters
         ----------
         texts : string list
             list with words to translate.
         df_translate : pandas.dataframe, optional
-            A dataframe with two columns: len_src with words in len_src language 
-            and len_dest with words in len_dest language. If it's not None, 
-            the rows are appended. Otherwise it's initialized and then the 
+            A dataframe with two columns: len_src with words in len_src language
+            and len_dest with words in len_dest language. If it's not None,
+            the rows are appended. Otherwise it's initialized and then the
             rows are appended.
             The default is None
         hypernym_check : string, optional
-            The synset to be checked if exists on translated hypernym tree. 
+            The synset to be checked if exists on translated hypernym tree.
             The default is "".
         len_src : string, optional
-            Language source. 
+            Language source.
             The default is "spanish".
         len_dest : string, optional
             Language destiny.
@@ -268,9 +265,8 @@ class NLPClass:
         Returns
         -------
         df_translate : pandas.dataframe
-            Dataframe with two columns: len_src with words in len_src language 
+            Dataframe with two columns: len_src with words in len_src language
             and len_dest with words in len_dest language.
-
         '''
         
         # If df_translate not exist, initialize it
@@ -289,10 +285,10 @@ class NLPClass:
                             iter_translates+=1
                             translated_word = translation_object[0].extra_data["parsed"][1][0][0][5][0][4][iter_translates][0].lower() # Extract a posible translation
                             translated_synsets = wn.synsets(translated_word.replace(" ","_"))
-                            translated_synsets = [x for x in translated_synsets if (".n.") in x.name().lower()] # keep nouns only
-                        if (hypernym_check != ''):
+                            translated_synsets = [x for x in translated_synsets if ".n." in x.name().lower()] # keep nouns only
+                        if hypernym_check != '':
                             synset_with_hypernym, _ = self.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check) # check if hypernym_check is part of translated_synsets hypernym tree
-                            if (synset_with_hypernym is not None):
+                            if synset_with_hypernym is not None:
                                 has_hyper = True
                         else:
                             has_hyper = True
@@ -305,7 +301,7 @@ class NLPClass:
                     df2 = pd.DataFrame({len_src: [text],len_dest: [translated_word]})
                     df_translate = df_translate.append(df2, ignore_index = True)
         return df_translate
-    
+
     def get_hypernyms_to(self, synset, hypernym_destiny = "animal.n.01"):
         """
         Check if the synset's hypernyms tree contains the hypernym_destiny
@@ -315,7 +311,7 @@ class NLPClass:
         synset : WordNet.synset
             Synset to be checked.
         hypernym_destiny : string, optional
-            Synset key to be searched in the synset's hypernyms tree. 
+            Synset key to be searched in the synset's hypernyms tree.
             The default is "animal.n.01".
 
         Returns
@@ -329,7 +325,7 @@ class NLPClass:
             hypernyms_to_destiny = []
             for hypernym in hypernyms:
                 hypernyms_to_destiny.append(hypernym)
-                if (hypernym_destiny == hypernym.name()):
+                if hypernym_destiny == hypernym.name():
                     return hypernyms_to_destiny
         return None
 
@@ -343,7 +339,7 @@ class NLPClass:
         synsets : synset list
             A list with synsets.
         hypernym_check : string, optional
-            The synset to be searched in the hypernyms tree. 
+            The synset to be searched in the hypernyms tree.
             The default is "animal.n.01".
 
         Returns
@@ -362,10 +358,10 @@ class NLPClass:
                 synset_with_hyper = synsets[i]
                 break
         return synset_with_hyper, hypernyms
-    
+
     def hypernym_min_nodes_distance_from_synset_to_hypernym(self, word, hypernym_check = "animal.n.01"):
         """
-        It calculates the number of nodes from the word synset to the hypernym_check 
+        It calculates the number of nodes from the word synset to the hypernym_check
         in the hypernyms tree.
 
         Parameters
