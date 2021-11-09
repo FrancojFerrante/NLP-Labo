@@ -83,3 +83,5 @@ MCR/transform.py
 MCR/test_transform.py
 MCR/README.md
 MCR/generate_all.sh
+*.bin
+*.gz
