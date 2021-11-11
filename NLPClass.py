@@ -21,9 +21,19 @@ from googletrans import Translator
 import pickle
 # pip install pickle-mixin
 
+import nltk
+from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet as wn
 
+# python -m spacy download es_core_news_sm
+import spacy
+
 import fasttext.util
+
+import contractions
+
+import re       # libreria de expresiones regulares
+import string   # libreria de cadena de caracteres
 
 class NLPClass:
     def __init__(self):
@@ -490,16 +500,57 @@ class NLPClass:
         return ongoing_semantic_list
         
 
+    def expand_contractions(self, token_list):
+      
+        # Defino una funcion anonima que al pasarle un argumento devuelve el resultado de aplicarle la funcion anterior a este mismo argumento
+        round0 = lambda x: contractions.fix(x)
         
+        # Dataframe que resulta de aplicarle a las columnas la funcion de limpieza
+        token_expanded = token_list.apply(round0)
         
+        return token_expanded
         
+    # Defino una funcion que recibe un texto y devuelve el mismo texto sin signos,
+    def clean_text(self, text):
         
+        # pasa las mayusculas del texto a minusculas
+        text = text.lower()                                              
+        # reemplaza texto entre corchetes por espacio en blanco.. ¿ y \% no se..
+        text = re.sub('\[.*?¿\]\%', '', text)                           
+        # reemplaza signos de puntuacion por espacio en blanco.. %s -> \S+ es cualquier caracter que no sea un espacio en blanco
+        text = re.sub('[%s]' % re.escape(string.punctuation), '', text) 
+        # remueve palabras que contienen numeros.
+        text = re.sub('\w*\d\w*', '', text)           
+        # Sacamos comillas, los puntos suspensivos, <<, >>
+        text = re.sub('[‘’“”…«»]', '', text)
+        text = re.sub('\n', ' ', text)                  
+        return text
         
-        
-        
-        
-        
-        
+    def lemmatizer(self, words, language = "english"):
+            
+        words_clean = []
+        if (language == "english"):
+            nltk.download('wordnet')
+            lemmatizer = WordNetLemmatizer() # funcion para lematizar
+            for w in words:
+                words_clean.append(lemmatizer.lemmatize(w))
+        elif (language == "spanish"):
+                
+            nlp = spacy.load("es_core_news_sm")
+            for token in words:
+                words_clean.append(nlp(token)[0].lemma_)
+        return words_clean
+    
+    def remove_stopwords(self,words,language = "english"):
+
+        nltk.download('stopwords') # hay que descargar este modulo en particular
+        sw = nltk.corpus.stopwords.words(language) # lista de stopwords
+
+        words_clean = []
+        for w in words:
+          if not w in sw: # si no es stopword, agregamos la version lematizada
+            words_clean.append(w)
+        return words_clean
         
         
         
