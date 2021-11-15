@@ -9,7 +9,8 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+from pathlib import Path
+import json
 from collections import Counter, OrderedDict
 
 import torchtext
@@ -28,11 +29,11 @@ from nltk.corpus import wordnet as wn
 # python -m spacy download es_core_news_sm
 import spacy
 
-import fasttext.util
+#import fasttext.util
 
-import contractions
+#import contractions
 
-import re       # libreria de expresiones regulares
+import re      # libreria de expresiones regulares
 import string   # libreria de cadena de caracteres
 
 class NLPClass:
@@ -551,7 +552,47 @@ class NLPClass:
           if not w in sw: # si no es stopword, agregamos la version lematizada
             words_clean.append(w)
         return words_clean
+    
+    def TreeTagger(self, transcripts_dict,path_to_save):
+        """
+        Parameters:
+        ----------
+        IMPORTANT: TreeTagger module must be located in C:\\TreeTagger.
         
+        transcripts_dict: must be structured as follows: 
+                          {'path': [list of paths to the .csv files containing the transcripts],
+                           'language': [list of transcript languages for each path in the list, 
+                            given in the same order]}.
+
+        path_to_save: path to save results.
+        """
         
+        transcripts = pd.DataFrame(transcripts_dict)
+        TreeTagger_path = Path('C:\\TreeTagger')
+    
+        os.makedirs(path_to_save,exist_ok=True)
+
+        os.chdir(TreeTagger_path)
+
+        for i,r in transcripts.iterrows():
+
+            parent = r['path'].parent    
+            os.makedirs(Path(parent,'Transcripts'),exist_ok=True)
+
+            transcript = pd.read_csv(r['path'],sep=';',encoding='utf_8',header=0)
+            lang = r['language']
+
+            for j,r2 in transcript.iterrows():
+                
+                file = Path(parent,'Transcripts',r2['ID'] + '_' + r['path'].name).with_suffix('.json')
+                json.dump(str(r2['Transcript']).replace('"',''), open(Path(parent,'Transcripts',file.name),'w'))
+                
+                if  lang == 'english':
+                    os.system('tag-english ' + str(file) + ' > ' + str(Path(parent,'Transcripts','tagged_' + file.name)))            
+                elif lang == 'spanish':
+                    os.system('tag-spanish ' + str(file) + ' > ' + str(Path(parent,'Transcripts','tagged_' + file.name)))            
+                else:
+                    print('{} tagging not implemented yet \n'.format(lang))
+ 
         
         
