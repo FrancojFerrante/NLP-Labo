@@ -31,7 +31,7 @@ import spacy
 
 #import fasttext.util
 
-#import contractions
+import contractions
 
 import re      # libreria de expresiones regulares
 import string   # libreria de cadena de caracteres
@@ -121,7 +121,7 @@ class NLPClass:
     def tokenize_list(self, text_dataframe, tokenizer_type = "basic_english"):
       '''
       It receives a list of strings and returns a list of string list where
-      each string is a token obteined from apply the tokenizer_type.
+      each string is a token obtained from apply the tokenizer_type.
 
       Parameters
       ----------
