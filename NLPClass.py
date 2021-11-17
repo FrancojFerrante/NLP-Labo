@@ -573,26 +573,53 @@ class NLPClass:
         os.makedirs(path_to_save,exist_ok=True)
 
         os.chdir(TreeTagger_path)
-
+        os.system('set PATH=' + str(Path(TreeTagger_path,'bin'))+';%PATH%')
         for i,r in transcripts.iterrows():
 
             parent = r['path'].parent    
             os.makedirs(Path(parent,'Transcripts'),exist_ok=True)
 
-            transcript = pd.read_csv(r['path'],sep=';',encoding='utf_8',header=0)
+            transcript = pd.read_csv(r['path'],sep=',',encoding='utf_8',header=0)
             lang = r['language']
 
             for j,r2 in transcript.iterrows():
                 
-                file = Path(parent,'Transcripts',r2['ID'] + '_' + r['path'].name).with_suffix('.json')
-                json.dump(str(r2['Transcript']).replace('"',''), open(Path(parent,'Transcripts',file.name),'w'))
-                
-                if  lang == 'english':
-                    os.system('tag-english ' + str(file) + ' > ' + str(Path(parent,'Transcripts','tagged_' + file.name)))            
-                elif lang == 'spanish':
-                    os.system('tag-spanish ' + str(file) + ' > ' + str(Path(parent,'Transcripts','tagged_' + file.name)))            
-                else:
-                    print('{} tagging not implemented yet \n'.format(lang))
- 
+                filepath = Path(parent,'Transcripts',r2['ID'] + '_' + r['path'].name).with_suffix('.txt')
+                file = open(filepath,'wb')
+                file.write(str(r2['Transcript']).encode('utf8'))
+                file.close()
+
+                os.system('tag-' + str(lang)  + ' ' + str(filepath) + ' ' + str(Path(parent,'Transcripts','tagged_' + filepath.name)))            
+               
+    def FilterTaggedWords(self,path,word_type='NN'):
+        """
+        Parameters:
+        ----------
+
+        path: path to .txt files where the tagged transcripts are saved.
+        word_type: code of the word type to be kept, as defined by TreeTagger (default=NN)
+
+        """    
+        os.makedirs(Path(path,'Filtered'),exist_ok=True)
         
+        files = Path(path).glob('tagged_*Chile*.txt')
+
+        for file in files:
+            data = pd.read_table(file,sep='\t',names = ['word','category','lemma'], header=None)
+            
+            for w_type in word_type:
+                
+                filtered_data = data.loc[data.iloc[:,1] == w_type,:].reset_index(drop=True)
+            if len(file.name.split('_')) == 5:
+                (_,name1,name2,group,_) = file.name.split('_')
+                name = name1 + '_' + name2
+            else:
+                (_,name,group,_) = file.name.split('_')
+            filename_to_save = Path(path,'Filtered', name + '_' + group).with_suffix('.csv')
+            filtered_data.to_csv(filename_to_save,encoding='utf8',index=False)
+            
+            
+            
+             
+                                
         
