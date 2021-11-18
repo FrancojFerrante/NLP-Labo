@@ -29,12 +29,14 @@ from nltk.corpus import wordnet as wn
 # python -m spacy download es_core_news_sm
 import spacy
 
-#import fasttext.util
+import fasttext.util
 
 import contractions
 
 import re      # libreria de expresiones regulares
 import string   # libreria de cadena de caracteres
+
+import itertools
 
 class NLPClass:
     def __init__(self):
@@ -295,11 +297,11 @@ class NLPClass:
                         while (len(translated_synsets)==0):
                             iter_translates+=1
                             translated_word = translation_object[0].extra_data["parsed"][1][0][0][5][0][4][iter_translates][0].lower() # Extract a posible translation
-                            translated_synsets = wn.synsets(translated_word.replace(" ","_"))
+                            translated_synsets = wn.synsets(translated_word.replace(" ","_"),pos=wn.NOUN)
                             translated_synsets = [x for x in translated_synsets if ".n." in x.name().lower()] # keep nouns only
                         if hypernym_check != '':
                             synset_with_hypernym, _ = self.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check) # check if hypernym_check is part of translated_synsets hypernym tree
-                            if synset_with_hypernym is not None:
+                            if len(synset_with_hypernym)>0:
                                 has_hyper = True
                         else:
                             has_hyper = True
@@ -331,19 +333,25 @@ class NLPClass:
             A synset list from the original synset to the hypernym_destiny.
 
         """
+        
+        # [f(x) if condition else g(x) for x in sequence]
+        # And, for list comprehensions with if conditions only,
+        
+        # [f(x) for x in sequence if condition]
+        
+
+        hypernym_destiny = wn.synset(hypernym_destiny)
         total_hypernyms = synset.hypernym_paths()
-        for hypernyms in total_hypernyms:
-            hypernyms_to_destiny = []
-            for hypernym in hypernyms:
-                hypernyms_to_destiny.append(hypernym)
-                if hypernym_destiny == hypernym.name():
-                    return hypernyms_to_destiny
-        return None
+        hypernyms_to_destiny = None
+        hypernyms_to_destiny = [list(itertools.takewhile(lambda ele: ele != hypernym_destiny, x[::-1])) + [hypernym_destiny]  for x in total_hypernyms if (hypernym_destiny in x)]
+        if (hypernyms_to_destiny==0):
+            hypernyms_to_destiny = None
+        return hypernyms_to_destiny
 
     def get_synset_that_has_hypernym(self, synsets, hypernym_check = "animal.n.01"):
         """
-        It receives a list of synsets and return the first synset that has the
-        hypernym_check in its hypernyms tree and the synset's hypernyms
+        It receives a list of synsets and return all the synsets that has the
+        hypernym_check in its hypernyms tree and the synsets's hypernyms
 
         Parameters
         ----------
@@ -355,25 +363,25 @@ class NLPClass:
 
         Returns
         -------
-        synset_with_hyper : synset
-            The first synset whose hypernyms tree contains the hypernym_check.
-        hypernyms : synset list
-            The synset_with_hyper's hypernyms tree.
+        synsets_with_hyper : synset
+            All the synset whose hypernyms tree contains the hypernym_check.
+        synsets_hypernyms : synset list
+            The synsets_with_hyper's hypernyms tree.
 
         """
-        synset_with_hyper = None
-        hypernyms = None
+        synsets_with_hyper = []
+        synsets_hypernyms = []
         for i in range(0,len(synsets)):
             hypernyms = self.get_hypernyms_to(synsets[i], hypernym_destiny = hypernym_check)
             if (hypernyms is not None):
-                synset_with_hyper = synsets[i]
-                break
-        return synset_with_hyper, hypernyms
+                synsets_with_hyper.append(synsets[i])
+                synsets_hypernyms.append(hypernyms)
+        return synsets_with_hyper, synsets_hypernyms
 
     def hypernym_min_nodes_distance_from_synset_to_hypernym(self, word, hypernym_check = "animal.n.01"):
         """
         It calculates the number of nodes from the word synset to the hypernym_check
-        in the hypernyms tree.
+        in the hypernyms tree. Get the shortest path
 
         Parameters
         ----------
@@ -389,24 +397,16 @@ class NLPClass:
             Number of nodes from word to hypernym_check.
 
         """
-        min_distancia = 100000
-        translated_synsets = wn.synsets(word.replace(" ","_"))
-        synset_with_hypernym, _ = self.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check)
-        if synset_with_hypernym is not None:
-            total_hypernyms = synset_with_hypernym.hypernym_paths()
-            for hypernyms in total_hypernyms:
-                distancia = 0
-                if wn.synset(hypernym_check) in hypernyms:
-                    hypernyms.reverse()
-                    for hypernym in hypernyms:
-                        if wn.synset(hypernym_check) != hypernym:
-                            distancia +=1
-                        else:
-                            distancia +=1
-                            break
-                    if distancia<min_distancia:
-                        min_distancia = distancia
-            return min_distancia
+        
+        translated_synsets = wn.synsets(word.replace(" ","_"),pos=wn.NOUN)
+        synsets_with_hypernym, synsets_hypernyms = self.get_synset_that_has_hypernym(translated_synsets, hypernym_check = hypernym_check)
+        if len(synsets_with_hypernym)>0:
+            aux=[]
+            for n in synsets_hypernyms:
+                for m in n:
+                    aux.append(len(m))
+            if aux!=[]:
+                return (np.min(aux))
         else:
             return -1
     
