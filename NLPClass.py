@@ -449,8 +449,72 @@ class NLPClass:
 
         """
         summation = sum((vector_distances-np.mean(vector_distances))*(vector_distances-np.mean(vector_distances)))
-        average = summation/(len(vector_distances)-1)
+        average = summation/(len(vector_distances))
         return average
+    
+    def cross_feature_variability(self,vector_words,concept):
+        
+        # Convierto a word embedding cada palabra dicha por cada paciente.
+        words_vector = self.get_word_fast_text_vector(vector_words)
+
+                
+        # Convierto a word embedding el concepto.
+        concept_vector = self.get_word_fast_text_vector(concept)
+
+        
+        # Calculo la distancia semántica entre cada palabra y el concepto
+        words_distances = self.cross_semantic_distance(words_vector,concept_vector)
+                
+        # Calculo la cross_feature_variability de cada paciente.
+        
+        ongoing_semantic_list = list()
+        for words in words_distances:
+            ongoing_semantic_list.append(self.ongoing_semantic_variability(words))
+
+        return ongoing_semantic_list
+    
+    def cross_semantic_distance(self,words_vector,concept_vector):
+        # Calculo la distancia semántica entre cada palabra y el concepto
+        words_distances = list()
+        for i_lista, vector_list in enumerate(words_vector):
+            words_distances.append([])
+            for i_vector,vector in enumerate(vector_list):
+                resultado = self.semantic_words_distance(vector_list[i_vector],concept_vector)
+                words_distances[i_lista].append(resultado)
+        return words_distances
+                
+                
+    def download_and_save_fast_text_model(self,save = True):
+        fasttext.util.download_model('es', if_exists='ignore')  # English
+        ft = fasttext.load_model('cc.es.300.bin')
+        if save:
+            ft.save_model('cc.es.300.bin') # First time only
+        return ft
+    
+    def load_fast_text_model(self,path_fast_text):
+        self.fasttext = fasttext.load_model(path_fast_text+'cc.es.300.bin')
+        return self.fasttext
+    
+    def get_word_fast_text_vector(self,vector_words):
+        
+        words_vector = list()
+        for i_lista,word_list in enumerate(vector_words):
+            words_vector.append([])
+            for i_word,word in enumerate(word_list):
+                words_vector[i_lista].append(self.fasttext.get_word_vector(word))
+                
+        return words_vector
+    
+    def ongoing_semantic_distance(self,words_vector):
+                                  
+        words_distances = list()
+        for i_lista, vector_list in enumerate(words_vector):
+            words_distances.append([])
+            for i_vector,vector in enumerate(vector_list):
+                if(i_vector!=0):
+                    resultado = self.semantic_words_distance(vector_list[i_vector-1],vector_list[i_vector])
+                    words_distances[i_lista].append(resultado)
+        return words_distances
     
     def ongoing_semantic_variability_complete(self, vector_words):
         """
@@ -470,30 +534,16 @@ class NLPClass:
 
         """
 
-        ######### First time only ###########
-        # fasttext.util.download_model('es', if_exists='ignore')  # English
-        ft = fasttext.load_model('cc.es.300.bin')
-        # ft.save_model('cc.es.300.bin') # First time only
+        # Obtengo el vector de fasttext para cada palabra de cada paciente
+        words_vector = self.get_word_fast_text_vector(vector_words)
         
-        # Convierto a word embedding cada palabra dicha por cada paciente.
         
-        words_vector = list()
-        for i_lista,word_list in enumerate(vector_words):
-            words_vector.append([])
-            for i_word,word in enumerate(word_list):
-                words_vector[i_lista].append(ft.get_word_vector(word))
-        
-        # Calculo la distancia semántica entre cada palabra contigua dicha por cada paciente.
-        words_distances = list()
-        for i_lista, vector_list in enumerate(words_vector):
-            words_distances.append([])
-            for i_vector,vector in enumerate(vector_list):
-                if(i_vector!=0):
-                    resultado = self.semantic_words_distance(vector_list[i_vector-1],vector_list[i_vector])
-                    words_distances[i_lista].append(resultado)
+        # Calculo la distancia semántica entre cada palabra (vector) contigua dicha por cada paciente.
+        words_distances = self.ongoing_semantic_distance(words_vector)
+
                 
         # Calculo la Ongoing Semantic Variability de cada paciente.
-        
+            
         ongoing_semantic_list = list()
         for words in words_distances:
             ongoing_semantic_list.append(self.ongoing_semantic_variability(words))
@@ -584,7 +634,7 @@ class NLPClass:
 
             for j,r2 in transcript.iterrows():
                 
-                filepath = Path(parent,'Transcripts',r2['ID'] + '_' + r['path'].name).with_suffix('.txt')
+                filepath = Path(parent,'Transcripts',str(r2['ID']) + '_' + r['path'].name).with_suffix('.txt')
                 file = open(filepath,'wb')
                 file.write(str(r2['Transcript']).encode('utf8'))
                 file.close()
