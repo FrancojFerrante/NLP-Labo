@@ -38,6 +38,11 @@ import string   # libreria de cadena de caracteres
 
 import itertools
 
+import sys
+sys.path.append("/tmp/TEST")
+
+from treetagger import TreeTagger
+
 class NLPClass:
     def __init__(self):
         self.numero = 1
@@ -489,6 +494,7 @@ class NLPClass:
         ft = fasttext.load_model('cc.es.300.bin')
         if save:
             ft.save_model('cc.es.300.bin') # First time only
+        self.fasttext = ft
         return ft
     
     def load_fast_text_model(self,path_fast_text):
@@ -551,7 +557,7 @@ class NLPClass:
         return ongoing_semantic_list
         
 
-    def expand_contractions(self, token_list):
+    def expand_contractions_dataframe(self, token_list):
       
         # Defino una funcion anonima que al pasarle un argumento devuelve el resultado de aplicarle la funcion anterior a este mismo argumento
         round0 = lambda x: contractions.fix(x)
@@ -560,6 +566,33 @@ class NLPClass:
         token_expanded = token_list.apply(round0)
         
         return token_expanded
+    
+    def expand_contractions(self, token):
+      
+        # Expando el token
+        token_expanded = contractions.fix(token)
+              
+        return token_expanded
+    
+    # Defino una funcion que recibe un texto y devuelve el mismo texto sin signos,
+    def clean_text_paula(self, text):
+        
+        # pasa las mayusculas del texto a minusculas
+        text = text.lower()                                              
+        # reemplaza texto entre corchetes por espacio en blanco.. ¿ y \% no se..
+        text = " ".join(re.findall('(?<!\S)[a-z_]+(?=[,.!?:;]?(?!\S))', text))
+                     
+        # reemplaza texto entre corchetes por espacio en blanco.. ¿ y \% no se..
+        text = re.sub('[%s]' % re.escape(string.punctuation), ' ', text) 
+
+        # # reemplaza signos de puntuacion por espacio en blanco.. %s -> \S+ es cualquier caracter que no sea un espacio en blanco
+        # text = re.sub('[%s]' % re.escape(string.punctuation), '', text) 
+        # # remueve palabras que contienen numeros.
+        # text = re.sub('\w*\d\w*', '', text)       
+        # # Sacamos comillas, los puntos suspensivos, <<, >>
+        # text = re.sub('[‘’“”…«»]', '', text)
+        # text = re.sub('\n', ' ', text)                  
+        return text
         
     # Defino una funcion que recibe un texto y devuelve el mismo texto sin signos,
     def clean_text(self, text):
@@ -571,7 +604,7 @@ class NLPClass:
         # reemplaza signos de puntuacion por espacio en blanco.. %s -> \S+ es cualquier caracter que no sea un espacio en blanco
         text = re.sub('[%s]' % re.escape(string.punctuation), '', text) 
         # remueve palabras que contienen numeros.
-        text = re.sub('\w*\d\w*', '', text)           
+        text = re.sub('\w*\d\w*', '', text)       
         # Sacamos comillas, los puntos suspensivos, <<, >>
         text = re.sub('[‘’“”…«»]', '', text)
         text = re.sub('\n', ' ', text)                  
@@ -603,6 +636,22 @@ class NLPClass:
             words_clean.append(w)
         return words_clean
     
+    def TreeTagger_text_to_list(self,text,language = "spanish"):
+        
+        tt = TreeTagger(path_to_treetagger='C:\TreeTagger',language=language);
+        resultado = tt.tag(text);
+        return resultado
+
+
+        
+    def Filter_tagged_words_list(self,tagged_list,word_type='NN'):
+        
+        tag_filtered = []
+        for tag in tagged_list:
+            if (tag[1]==word_type):
+                tag_filtered.append(tag)
+        return tag_filtered
+        
     def TreeTagger(self, transcripts_dict,path_to_save):
         """
         Parameters:
@@ -628,7 +677,7 @@ class NLPClass:
 
             parent = r['path'].parent    
             os.makedirs(Path(parent,'Transcripts'),exist_ok=True)
-
+            print(r['path'])
             transcript = pd.read_csv(r['path'],sep=',',encoding='utf_8',header=0)
             lang = r['language']
 
@@ -638,7 +687,6 @@ class NLPClass:
                 file = open(filepath,'wb')
                 file.write(str(r2['Transcript']).encode('utf8'))
                 file.close()
-
                 os.system('tag-' + str(lang)  + ' ' + str(filepath) + ' ' + str(Path(parent,'Transcripts','tagged_' + filepath.name)))            
                
     def FilterTaggedWords(self,path,word_type='NN'):
@@ -671,5 +719,32 @@ class NLPClass:
             
             
              
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
                                 
         

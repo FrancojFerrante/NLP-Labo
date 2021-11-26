@@ -14,10 +14,10 @@ import NLPClass
 
 # Levanto la base de fluidez
 cwd = 'D://Franco//Doctorado//Laboratorio//NLP' # path Franco escritorio
-# cwd = 'C://Franco//NLP' # path Franco Udesa
+cwd = 'D://Franco//Doctorado//Laboratorio//BasesFluidezFonoYSeman//basesdedatos'
 
 pickle_traduccion = '//Scripts//traducciones.pkl'
-df_pacientes = pd.ExcelFile(cwd+r'\Bases\Transcripciones fluidez.xlsx')
+df_pacientes = pd.ExcelFile(cwd+r'\transcripciones_fluidez.xlsx')
 df_pacientes = pd.read_excel(df_pacientes, 'Hoja 1')
 df_pacientes = df_pacientes.drop(df_pacientes[df_pacientes["Estado"] != "Completo"].index)
 
@@ -27,7 +27,7 @@ try:
 except (OSError, IOError):
     df_translate = pd.DataFrame(columns=['spanish','english'])
 
-df_translate = nlp_class.translations_dictionary(df_translate, path = cwd+pickle_traduccion)
+# df_translate = nlp_class.translations_dictionary(df_translate, path = cwd+pickle_traduccion)
 
 lista_columnas_concatenar = ['fluency_animals_0_15_correctas_individuales',
                              'fluency_animals_15_30_correctas_individuales',
@@ -57,12 +57,33 @@ df_translate['nodes'] = number_nodes
 
 df_translate.to_pickle(cwd+pickle_traduccion)
 
+# %%
 
+lista_tokenizada_nodos = []
+contador =-1
+for elemento in lista_tokenizada:
+    contador +=1
+    lista_tokenizada_nodos.append([])
+    for palabra in elemento:
+        lista_tokenizada_nodos[contador].append(df_translate[df_translate['spanish'] == palabra]['nodes'].values[0])
+        
+cantidad_palabras = 0
+cantidad_palabras_no_encontradas = 0
+for elemento in lista_tokenizada_nodos:
+    for nodo in elemento:
+        cantidad_palabras+=1
+        if nodo==-1:
+            cantidad_palabras_no_encontradas+=1
+# %%
 
+# number_nodes = []
+# for i,row in df_translate.iterrows():
+#     number_nodes.append(nlp_class.hypernym_min_nodes_distance_from_synset_to_hypernym(row['spanish'], hypernym_check = "animal.n.01"))
 
+# df_translate['nodes_spanish'] = number_nodes
 
 
 # %% Download and load fasttext model
 
 
-ongoing_semantic_list = nlp_class.ongoing_semantic_variability_complete(lista_tokenizada)
+# ongoing_semantic_list = nlp_class.ongoing_semantic_variability_complete(lista_tokenizada)
