@@ -16,7 +16,8 @@ from collections import Counter, OrderedDict
 import torchtext
 from torchtext.data import get_tokenizer
 
-from googletrans import Translator
+# from googletrans import Translator
+from deep_translator import GoogleTranslator
 # pip install googletrans==4.0.0rc1
 
 import pickle
@@ -42,6 +43,8 @@ import sys
 sys.path.append("/tmp/TEST")
 
 from treetagger import TreeTagger
+
+import pathlib
 
 class NLPClass:
     def __init__(self):
@@ -225,6 +228,44 @@ class NLPClass:
             lista[contador] = lista[contador].rstrip()
             contador+=1
         return lista
+    
+    
+    def translate_google_trans(self, text, lan_src = 'spanish', lan_dest = 'english', category = "general"):
+        '''
+        It translates text from one language to another using googletrans.
+
+        Parameters
+        ----------
+        text : string list
+            Strings to be translated.
+        lan_src : string, optional.
+            The language source. 
+            The default is 'es'.
+        lan_dest : string, optional
+            The language destiny. 
+            The default is 'en'.
+
+        Returns
+        -------
+        text_translate : translated_object list
+            A list where each element is a translation from each text list 
+            element.
+
+        '''
+        translated_objects = []
+        for element in text:
+            try:
+                df_translate = pd.read_pickle(pathlib.Path(__file__).parent.resolve()+"pickle_traduccion.pkl")
+            except (OSError, IOError):
+                df_translate = pd.DataFrame(columns=['word','from','to','category','translation'])
+                
+            df_result = df_translate.loc[(df_translate['word'] == element) & (df_translate['from'] == lan_src) & (df_translate['to'] == lan_dest) & (df_translate['category'] == category)]
+            if (len(df_result.index) > 0):
+                translated_objects.append(df_result["translation"].values[0])
+            else:    
+                translated_objects.append(GoogleTranslator(source =lan_src, target=lan_dest).translate(element.replace("-"," ")))
+        return translated_objects
+    
     
     def translate(self, text, lan_src = 'spanish', lan_dest = 'english'):
         '''
@@ -453,6 +494,8 @@ class NLPClass:
             variability.
 
         """
+        if (len(vector_distances) < 2):
+            return np.nan
         summation = sum((vector_distances-np.mean(vector_distances))*(vector_distances-np.mean(vector_distances)))
         average = summation/(len(vector_distances))
         return average
@@ -464,7 +507,7 @@ class NLPClass:
 
                 
         # Convierto a word embedding el concepto.
-        concept_vector = self.get_word_fast_text_vector(concept)
+        concept_vector = self.get_word_fast_text_vector(concept)[0][0]
 
         
         # Calculo la distancia semántica entre cada palabra y el concepto
