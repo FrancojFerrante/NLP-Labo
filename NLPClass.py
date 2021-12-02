@@ -16,8 +16,8 @@ from collections import Counter, OrderedDict
 import torchtext
 from torchtext.data import get_tokenizer
 
-# from googletrans import Translator
-from deep_translator import GoogleTranslator
+from googletrans import Translator
+# from deep_translator import GoogleTranslator
 # pip install googletrans==4.0.0rc1
 
 import pickle
@@ -230,42 +230,60 @@ class NLPClass:
         return lista
     
     
-    def translate_google_trans(self, text, lan_src = 'spanish', lan_dest = 'english', category = "general"):
-        '''
-        It translates text from one language to another using googletrans.
+    # def translate_google_trans(self, text, lan_src = 'spanish', lan_dest = 'english', category = "general"):
+    #     '''
+    #     It translates text from one language to another using googletrans.
 
-        Parameters
-        ----------
-        text : string list
-            Strings to be translated.
-        lan_src : string, optional.
-            The language source. 
-            The default is 'es'.
-        lan_dest : string, optional
-            The language destiny. 
-            The default is 'en'.
+    #     Parameters
+    #     ----------
+    #     text : string list
+    #         Strings to be translated.
+    #     lan_src : string, optional.
+    #         The language source. 
+    #         The default is 'es'.
+    #     lan_dest : string, optional
+    #         The language destiny. 
+    #         The default is 'en'.
 
-        Returns
-        -------
-        text_translate : translated_object list
-            A list where each element is a translation from each text list 
-            element.
+    #     Returns
+    #     -------
+    #     text_translate : translated_object list
+    #         A list where each element is a translation from each text list 
+    #         element.
 
-        '''
-        translated_objects = []
-        for element in text:
-            try:
-                df_translate = pd.read_pickle(pathlib.Path(__file__).parent.resolve()+"pickle_traduccion.pkl")
-            except (OSError, IOError):
-                df_translate = pd.DataFrame(columns=['word','from','to','category','translation'])
+    #     '''
+    #     translated_objects = []
+    #     for element in text:
+    #         try:
+    #             df_translate = pd.read_pickle(pathlib.Path(__file__).parent.resolve()+"pickle_traduccion.pkl")
+    #         except (OSError, IOError):
+    #             df_translate = pd.DataFrame(columns=['word','from','to','category','translation'])
                 
-            df_result = df_translate.loc[(df_translate['word'] == element) & (df_translate['from'] == lan_src) & (df_translate['to'] == lan_dest) & (df_translate['category'] == category)]
-            if (len(df_result.index) > 0):
-                translated_objects.append(df_result["translation"].values[0])
-            else:    
-                translated_objects.append(GoogleTranslator(source =lan_src, target=lan_dest).translate(element.replace("-"," ")))
-        return translated_objects
+    #         df_result = df_translate.loc[(df_translate['word'] == element) & (df_translate['from'] == lan_src) & (df_translate['to'] == lan_dest) & (df_translate['category'] == category)]
+    #         if (len(df_result.index) > 0):
+    #             translated_objects.append(df_result["translation"].values[0])
+    #         else:    
+    #             translated_objects.append(GoogleTranslator(source =lan_src, target=lan_dest).translate(element.replace("-"," ")))
+    #     return translated_objects
     
+    def add_to_pickle_translation_file(self,path,words,lan_src = "spanish",lan_dest = "english"):
+        df_translation = self.read_pickle_translation_file(path)
+        for word in words:
+            df_check = df_translation[(df_translation.word == word) & (df_translation.lan_src == lan_src) & (df_translation.lan_dest == lan_dest)]
+            if len(df_check.index) == 0:
+                new_row = [word,self.translate([word],lan_src,lan_dest)[0].extra_data["parsed"],lan_src,lan_dest]
+                df_length = len(df_translation)
+                df_translation.loc[df_length] = new_row
+        df_translation.to_pickle(path+"//translations.pkl")
+
+    
+    def read_pickle_translation_file(self,path):
+        try:
+            df_translation = pd.read_pickle(path+"//translations.pkl")
+        except (OSError, IOError):
+            df_translation = pd.DataFrame(columns=['word','translation','lan_src','lan_dest'])
+        return df_translation
+        
     
     def translate(self, text, lan_src = 'spanish', lan_dest = 'english'):
         '''
@@ -292,7 +310,7 @@ class NLPClass:
         translator = Translator()
         translated_objects = []
         for element in text:
-            translated_objects.append(translator.translate(element.replace("-"," "), src=lan_src, dest=lan_dest))
+            translated_objects.append(translator.translate(element, src=lan_src, dest=lan_dest))
         return translated_objects
     def translate_checking_wordnet_and_hypernym(self, texts, df_translate = None, hypernym_check = '', len_src = 'spanish', len_dest = 'english'):
         '''

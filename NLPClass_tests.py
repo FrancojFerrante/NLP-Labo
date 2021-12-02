@@ -87,3 +87,10 @@ for elemento in lista_tokenizada_nodos:
 
 
 # ongoing_semantic_list = nlp_class.ongoing_semantic_variability_complete(lista_tokenizada)
+
+
+# %%
+
+import NLPClass
+nlp_class = NLPClass.NLPClass()
+dict_translation = nlp_class.add_to_pickle_translation_file("D://Franco//Doctorado//Laboratorio//BasesFluidezFonoYSeman//Scripts",["palabra","vaso"],lan_src = "spanish",lan_dest = "english")
