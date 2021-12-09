@@ -229,43 +229,6 @@ class NLPClass:
             contador+=1
         return lista
     
-    
-    # def translate_google_trans(self, text, lan_src = 'spanish', lan_dest = 'english', category = "general"):
-    #     '''
-    #     It translates text from one language to another using googletrans.
-
-    #     Parameters
-    #     ----------
-    #     text : string list
-    #         Strings to be translated.
-    #     lan_src : string, optional.
-    #         The language source. 
-    #         The default is 'es'.
-    #     lan_dest : string, optional
-    #         The language destiny. 
-    #         The default is 'en'.
-
-    #     Returns
-    #     -------
-    #     text_translate : translated_object list
-    #         A list where each element is a translation from each text list 
-    #         element.
-
-    #     '''
-    #     translated_objects = []
-    #     for element in text:
-    #         try:
-    #             df_translate = pd.read_pickle(pathlib.Path(__file__).parent.resolve()+"pickle_traduccion.pkl")
-    #         except (OSError, IOError):
-    #             df_translate = pd.DataFrame(columns=['word','from','to','category','translation'])
-                
-    #         df_result = df_translate.loc[(df_translate['word'] == element) & (df_translate['from'] == lan_src) & (df_translate['to'] == lan_dest) & (df_translate['category'] == category)]
-    #         if (len(df_result.index) > 0):
-    #             translated_objects.append(df_result["translation"].values[0])
-    #         else:    
-    #             translated_objects.append(GoogleTranslator(source =lan_src, target=lan_dest).translate(element.replace("-"," ")))
-    #     return translated_objects
-    
     def add_to_pickle_translation_file(self,path,words,lan_src = "spanish",lan_dest = "english"):
         df_translation = self.read_pickle_translation_file(path)
         for word in words:
@@ -471,6 +434,17 @@ class NLPClass:
                     aux.append(len(m))
             if aux!=[]:
                 return (np.min(aux))
+        else:
+            return -1
+        
+    def min_nodes_distance_all_words(self,words,hypernym_check= "synset.n.01"):
+        minima = []
+        for word in words:
+            word_min = self.hypernym_min_nodes_distance_from_synset_to_hypernym(word,hypernym_check)
+            if word_min != -1:
+                minima.append(word_min)
+        if minima!=[]:
+            return np.min(minima)
         else:
             return -1
     
@@ -697,32 +671,16 @@ class NLPClass:
             words_clean.append(w)
         return words_clean
     
-    def TreeTagger_text_to_list(self,text,language = "spanish"):
-        
-        tt = TreeTagger(path_to_treetagger='C:\TreeTagger',language=language);
-        resultado = tt.tag(text);
-        return resultado
-
-
-        
-    def Filter_tagged_words_list(self,tagged_list,word_type='NN'):
-        
-        tag_filtered = []
-        for tag in tagged_list:
-            if (tag[1]==word_type):
-                tag_filtered.append(tag)
-        return tag_filtered
-    
     def normalize_noun_count(self,df_tagged,language="english"):
         
         noun_counter=0
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if(row[1]=="NN" | row[1]=="NNS"):
+                if((row[1]=="NN") | (row[1]=="NNS")):
                     noun_counter+=1
         elif language == "spanish":
             for i,row in df_tagged.iterrows():
-                if(row[1]=="NC":
+                if(row[1]=="NC"):
                     noun_counter+=1
         return noun_counter/(len(df_tagged.index))
     
@@ -733,6 +691,32 @@ class NLPClass:
                 verb_counter+=1
         return verb_counter/(len(df_tagged.index))
     
+    def normalize_adj_count(self,df_tagged,language="english"):
+        
+        adj_counter=0
+        if (language=="english"):
+            for i,row in df_tagged.iterrows():
+                if(row[1]=="JJ"):
+                    adj_counter+=1
+        elif language == "spanish":
+            for i,row in df_tagged.iterrows():
+                if(row[1]=="ADJ"):
+                    adj_counter+=1
+        return adj_counter/(len(df_tagged.index))
+    
+    def normalize_adv_count(self,df_tagged,language="english"):
+        
+        adv_counter=0
+        if (language=="english"):
+            for i,row in df_tagged.iterrows():
+                if(row[1]=="RB"):
+                    adv_counter+=1
+        elif language == "spanish":
+            for i,row in df_tagged.iterrows():
+                if(row[1]=="ADV"):
+                    adv_counter+=1
+        return adv_counter/(len(df_tagged.index))
+    
     
     def normalize_noun_count_content(self,df_tagged,language="english"):
         
@@ -741,43 +725,98 @@ class NLPClass:
 
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if(str(row[1]).startswith("V") | row[1]=="NN" | row[1]=="NNS" |
-                   str(row[1]).startswith("JJ") | str(row[1]).startswith("RB")):
+                if((str(row[1]).startswith("V")) | (row[1]=="NN") | (row[1]=="NNS") |
+                   (str(row[1]).startswith("JJ")) | (str(row[1]).startswith("RB"))):
                     content_word_counter+=1
-                    if(row[1]=="NN" | row[1]=="NNS"):
+                    if((row[1]=="NN") | (row[1]=="NNS")):
                         noun_counter+=1
                 
         elif language == "spanish":
             for i,row in df_tagged.iterrows():
-                if(str(row[1]).startswith("V") | row[1]=="NC"|
-                   row[1]=="ADV" | row[1]=="ADJ"):
+                if((str(row[1]).startswith("V")) | (row[1]=="NC") |
+                   (row[1]=="ADV") | (row[1]=="ADJ")):
                     content_word_counter+=1
                     if (row[1]=="NC"):
                         noun_counter+=1
         return noun_counter/content_word_counter
     
-    def normalize_verb_count(self,df_tagged,language="english"):
+    def normalize_verb_count_content(self,df_tagged,language="english"):
         verb_counter=0
         content_word_counter=0
 
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if(str(row[1]).startswith("V") | row[1]=="NN" | row[1]=="NNS" |
-                   str(row[1]).startswith("JJ") | str(row[1]).startswith("RB")):
+                if((str(row[1]).startswith("V")) | (row[1]=="NN") | (row[1]=="NNS") |
+                   (str(row[1]).startswith("JJ")) | (str(row[1]).startswith("RB"))):
                     content_word_counter+=1
-                    if(str(row[1]).startswith("V"):
+                    if(str(row[1]).startswith("V")):
                         verb_counter+=1
                 
         elif language == "spanish":
             for i,row in df_tagged.iterrows():
-                if(str(row[1]).startswith("V") | row[1]=="NC"|
-                   row[1]=="ADV" | row[1]=="ADJ"):
+                if((str(row[1]).startswith("V")) | (row[1]=="NC") |
+                   (row[1]=="ADV") | (row[1]=="ADJ")):
                     content_word_counter+=1
-                    if (str(row[1]).startswith("V"):
+                    if (str(row[1]).startswith("V")):
                         verb_counter+=1
-        return noun_counter/content_word_counter
+        return verb_counter/content_word_counter
+    
+    def normalize_adj_count_content(self,df_tagged,language="english"):
+        adj_counter=0
+        content_word_counter=0
+
+        if (language=="english"):
+            for i,row in df_tagged.iterrows():
+                if((str(row[1]).startswith("V")) | (row[1]=="NN") | (row[1]=="NNS") |
+                   (str(row[1]).startswith("JJ")) | (str(row[1]).startswith("RB"))):
+                    content_word_counter+=1
+                    if(str(row[1]).startswith("JJ")):
+                        adj_counter+=1
+                
+        elif language == "spanish":
+            for i,row in df_tagged.iterrows():
+                if((str(row[1]).startswith("V")) | (row[1]=="NC") |
+                   (row[1]=="ADV") | (row[1]=="ADJ")):
+                    content_word_counter+=1
+                    if (str(row[1]).startswith("ADJ")):
+                        adj_counter+=1
+        return adj_counter/content_word_counter
         
+    def normalize_adv_count_content(self,df_tagged,language="english"):
+        adv_counter=0
+        content_word_counter=0
+
+        if (language=="english"):
+            for i,row in df_tagged.iterrows():
+                if((str(row[1]).startswith("V")) | (row[1]=="NN") | (row[1]=="NNS") |
+                   (str(row[1]).startswith("JJ")) | (str(row[1]).startswith("RB"))):
+                    content_word_counter+=1
+                    if(str(row[1]).startswith("RB")):
+                        adv_counter+=1
+                
+        elif language == "spanish":
+            for i,row in df_tagged.iterrows():
+                if((str(row[1]).startswith("V")) | (row[1]=="NC") |
+                   (row[1]=="ADV") | (row[1]=="ADJ")):
+                    content_word_counter+=1
+                    if (str(row[1]).startswith("ADV")):
+                        adv_counter+=1
+        return adv_counter/content_word_counter
+    
+    def TreeTagger_text_to_list(self,text,language = "spanish"):
         
+        tt = TreeTagger(path_to_treetagger='C:\TreeTagger',language=language);
+        resultado = tt.tag(text);
+        return resultado
+
+    def Filter_tagged_words_list(self,tagged_list,word_type='NN'):
+        
+        tag_filtered = []
+        for tag in tagged_list:
+            if (tag[1]==word_type):
+                tag_filtered.append(tag)
+        return tag_filtered
+    
     def TreeTagger(self, transcripts_dict,path_to_save):
         """
         Parameters:
