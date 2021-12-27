@@ -49,6 +49,7 @@ import pathlib
 class NLPClass:
     def __init__(self):
         self.numero = 1
+        nltk.download('wordnet')
     def translations_dictionary(self, df_translate=None, path=""):
         '''
         It appends to a dictionary different animals names in spanish and
@@ -230,6 +231,7 @@ class NLPClass:
         return lista
     
     def add_to_pickle_translation_file(self,path,words,lan_src = "spanish",lan_dest = "english"):
+        
         df_translation = self.read_pickle_translation_file(path)
         for word in words:
             df_check = df_translation[(df_translation.word == word) & (df_translation.lan_src == lan_src) & (df_translation.lan_dest == lan_dest)]
@@ -244,6 +246,7 @@ class NLPClass:
         try:
             df_translation = pd.read_pickle(path+"//translations.pkl")
         except (OSError, IOError):
+            print("translation.pkl no encontrado")
             df_translation = pd.DataFrame(columns=['word','translation','lan_src','lan_dest'])
         return df_translation
         
