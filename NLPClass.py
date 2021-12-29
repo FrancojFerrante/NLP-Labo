@@ -151,7 +151,7 @@ class NLPClass:
       '''
       
       tokenizer = get_tokenizer(tokenizer_type)
-      tokens = [tokenizer(s) for s in text_dataframe]
+      tokens = [tokenizer(x) if str(x)!="nan" else x for x in text_dataframe]
       return tokens
   
     def count_words(self, tokens, percentaje = 0):
@@ -179,8 +179,9 @@ class NLPClass:
         
         words = Counter()
         for s in tokens:
-            for w in s:
-                words[w] += 1
+            if str(s) != "nan":
+                for w in s:
+                    words[w] += 1
                 
         sorted_words = OrderedDict(words.most_common())
         
