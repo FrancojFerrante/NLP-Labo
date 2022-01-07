@@ -234,9 +234,10 @@ class NLPClass:
     def add_to_pickle_translation_file(self,path,words,lan_src = "spanish",lan_dest = "english"):
         
         df_translation = self.read_pickle_translation_file(path)
-        for word in words:
+        for i,word in enumerate(words):
             df_check = df_translation[(df_translation.word == word) & (df_translation.lan_src == lan_src) & (df_translation.lan_dest == lan_dest)]
             if len(df_check.index) == 0:
+                print("Traduciendo: " + str(i) + "/" + str(len(words)))
                 new_row = [word,self.translate([word],lan_src,lan_dest)[0].extra_data["parsed"],lan_src,lan_dest]
                 df_length = len(df_translation)
                 df_translation.loc[df_length] = new_row
