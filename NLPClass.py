@@ -13,6 +13,8 @@ from pathlib import Path
 import json
 from collections import Counter, OrderedDict
 
+import math
+
 import torchtext
 from torchtext.data import get_tokenizer
 
@@ -45,6 +47,8 @@ sys.path.append("/tmp/TEST")
 from treetagger import TreeTagger
 
 import pathlib
+
+from scipy.spatial import distance
 
 class NLPClass:
     def __init__(self):
@@ -886,11 +890,31 @@ class NLPClass:
             filename_to_save = Path(path,'Filtered', name + '_' + group).with_suffix('.csv')
             filtered_data.to_csv(filename_to_save,encoding='utf8',index=False)
             
+    def clusterization(self,vector_words):
+        if len(vector_words)>1:
+            acum = 0
+            for i in range(0,len(vector_words)-1):
+                for j in range(i+1,len(vector_words)):
+                    acum+=(np.abs(np.dot(vector_words[i],vector_words[j])/(np.linalg.norm(vector_words[i])*np.linalg.norm(vector_words[j]))))
+            threshold = ((math.factorial(len(vector_words)-2)*2)/(math.factorial(len(vector_words))))*acum
             
+            clusters = []
+            actual_cluster = [vector_words[0]]
+            for i in range(1,len(vector_words)):
+                array_2d = np.stack(actual_cluster,axis=0)
+                mu = np.mean(array_2d,axis=0)
+                if np.abs(((distance.cosine(mu, vector_words[i])-1)*-1)) > threshold:
+                    actual_cluster.append(vector_words[i])
+                else:
+                    clusters.append(actual_cluster)
+                    actual_cluster = [vector_words[i]]
+            clusters.append(actual_cluster)
+            return clusters
             
-             
-            
-            
+        else:
+            return np.nan
+
+
             
             
             
