@@ -49,6 +49,8 @@ from treetagger import TreeTagger
 import pathlib
 
 from scipy.spatial import distance
+from scipy.stats import kurtosis
+from scipy.stats import skew
 
 class NLPClass:
     def __init__(self):
@@ -236,7 +238,27 @@ class NLPClass:
         return lista
     
     def add_to_pickle_translation_file(self,path,words,lan_src = "spanish",lan_dest = "english"):
-        
+        '''
+        It check if the word is in path+"//translations.pkl", if it is not, it adds it to the file.
+
+        Parameters
+        ----------
+        path : string
+            The path where the translation file is.
+        words : list of strings
+            List of words to obtain the translation.
+        lan_src : string, optional
+            DESCRIPTION. language in which each word of words is.
+            The default is "spanish".
+        lan_dest : string, optional
+            language in which each word will be translated.
+            The default is "english".
+
+        Returns
+        -------
+        None.
+
+        '''
         df_translation = self.read_pickle_translation_file(path)
         for i,word in enumerate(words):
             df_check = df_translation[(df_translation.word == word) & (df_translation.lan_src == lan_src) & (df_translation.lan_dest == lan_dest)]
@@ -249,6 +271,21 @@ class NLPClass:
 
     
     def read_pickle_translation_file(self,path):
+        '''
+        Read pickle file with the all translations DataFrame.
+
+        Parameters
+        ----------
+        path : string
+            Path where the picke file is.
+
+        Returns
+        -------
+        df_translation : pandas.DataFrame
+            df with all the translations with the following structure:
+                word|translation|lan_src|lan_dest|
+
+        '''
         try:
             df_translation = pd.read_pickle(path+"//translations.pkl")
         except (OSError, IOError):
@@ -284,6 +321,7 @@ class NLPClass:
         for element in text:
             translated_objects.append(translator.translate(element, src=lan_src, dest=lan_dest))
         return translated_objects
+    
     def translate_checking_wordnet_and_hypernym(self, texts, df_translate = None, hypernym_check = '', len_src = 'spanish', len_dest = 'english'):
         '''
         It receives a word list in len_src language and returns a dataframe
@@ -915,10 +953,115 @@ class NLPClass:
             return np.nan
 
 
+    def psycholinguistics_features(self, data, psycholinguistics_columns, tokens_columns, df):
+        '''
+        It adds a new column for each psycholinguistics feature in psycholinguistics_columns 
+        where it asign to each row the corresponding psycholinguistic values to each token.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            The DataFrame with one row for each different token with the 
+            corresponding psycholinguistic values. Obtained from https://www.bcbl.eu/databases/espal/
+        psycholinguistics_columns : List of column names
+            A list with the names of the columns in data with the 
+            psycholinguistic variables.
+        columnas_tokens : List of column names
+            A list with the names of df where the tokens are.
+        df : pandas.DataFrame
+            The DataFrame with the lists of tokens.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            The same DataFrame received but with as many columns more as length of
+            psycholinguistics_columns multiplied by length of tokens_columns.
             
+        Example:
+        Parameters:
+            data:
+                word|log_frq|sa_num_phon|
+                perro|1.85108|4|
+                gato|1.59723|4|
+                caballo|1.92165|6|
+                papa|1.93218|4|
+                piso|1.55915|4|
+                pintura|1.65155|7|
+            psycholinguistics_columns:
+                ["log_frq","sa_num_phon"]
+            columnas_tokens:
+                ["fluency_p","fluency_animals"]
+            df:
+                codigo|diagnostico|fluency_p|fluency_animals|
+                001|AD|["papa","pintura"],["caballo","gato"]
+                002|CTR|["piso","pintura","papa"],["perro","gato"]
             
-            
-            
+        Returns:
+            df:
+                codigo|diagnostico|fluency_p|fluency_animals|fluency_p_log_frq|fluency_p_sa_num_phon|fluency_animals_log_frq|fluency_animals_sa_num_phon|
+                001|AD|["papa","pintura"]|["caballo","gato"]|[1.93218,1.65155]|[4,7]|[1.92165,1.59723]|[6,4]
+                002|CTR|["piso","pintura","papa"]|["perro","gato"]|[1.55915,1.65155,1.93218]|[4,7,4]|[1.55915,1.65155,1.93218]|[4,7,4]
+        '''
+        for column in tokens_columns:
+                
+            for psico_column in psycholinguistics_columns:
+                df[column+"_"+psico_column] = np.nan
+                df[column+"_"+psico_column] = df[column+"_"+psico_column].astype(object)
+                for i,row in df.iterrows():
+                        df.at[i,column+"_"+psico_column] = [next(iter(list(set(data[data["word"] == word][psico_column].values))), None) for word in row[column]]
+
+        return df
+
+    def obtain_stadistic_values(self,df,psycholinguistics_columns,tokens_columns):
+        '''
+        It obtains the promedio, minimo, maximo, std, mediana, curtosis and skewness
+        of each psycholinguistic variable of each fluency task.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The DataFrame with the psycholinguistic values of each token of
+            each fluency task.
+        psycholinguistics_columns : List of column names
+            A list with the names of the psycholinguistic variables.
+        tokens_columns : List of column names
+            A list with the names of df where the tokens are.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            The same DataFrame received but with as many columns more as length of
+            psycholinguistics_columns multiplied by length of tokens_columns multiplied
+            by the 7 stadistics values (promedio, minimo, maximo, std, mediana, curtosis y skewness.
+
+        '''
+        for column in tokens_columns:
+            for psico_column in psycholinguistics_columns:    
+                df[column+"_"+psico_column+"_promedio"] = np.nan
+                df[column+"_"+psico_column+"_minimo"] = np.nan
+                df[column+"_"+psico_column+"_maximo"] = np.nan
+                df[column+"_"+psico_column+"_std"] = np.nan
+                df[column+"_"+psico_column+"_mediana"] = np.nan
+                df[column+"_"+psico_column+"_curtosis"] = np.nan
+                df[column+"_"+psico_column+"_skewness"] = np.nan
+        
+        
+            for i,row in df.iterrows():
+                for psico_column in psycholinguistics_columns:
+                    df.at[i,column+"_"+psico_column] = [i for i in row[column+"_"+psico_column] if i]
+                    calculation_list = df.at[i,column+"_"+psico_column]
+                    df.at[i,column+"_"+psico_column+"_promedio"] = np.nanmean(calculation_list)
+                    if (len(calculation_list)==0):
+                        df.at[i,column+"_"+psico_column+"_minimo"] = np.nan
+                        df.at[i,column+"_"+psico_column+"_maximo"] = np.nan
+                    else:
+                        df.at[i,column+"_"+psico_column+"_minimo"] = np.nanmin(calculation_list)
+                        df.at[i,column+"_"+psico_column+"_maximo"] = np.nanmax(calculation_list)
+                    df.at[i,column+"_"+psico_column+"_std"] = np.nanstd(calculation_list)
+                    df.at[i,column+"_"+psico_column+"_mediana"] = np.nanmedian(calculation_list)
+                    df.at[i,column+"_"+psico_column+"_curtosis"] = kurtosis([x for x in calculation_list if str(x) != 'nan'])
+                    df.at[i,column+"_"+psico_column+"_skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])    
+        return df
             
             
             
