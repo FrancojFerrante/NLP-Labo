@@ -263,7 +263,7 @@ class NLPClass:
         for i,word in enumerate(words):
             df_check = df_translation[(df_translation.word == word) & (df_translation.lan_src == lan_src) & (df_translation.lan_dest == lan_dest)]
             if len(df_check.index) == 0:
-                print("Traduciendo: " + str(i) + "/" + str(len(words)))
+                print("Traduciendo " + word +": " + str(i) + "/" + str(len(words)))
                 new_row = [word,self.translate([word],lan_src,lan_dest)[0].extra_data["parsed"],lan_src,lan_dest]
                 df_length = len(df_translation)
                 df_translation.loc[df_length] = new_row
