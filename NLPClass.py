@@ -580,7 +580,7 @@ class NLPClass:
         return ft
     
     def load_fast_text_model(self,path_fast_text):
-        self.fasttext = fasttext.load_model(path_fast_text+'cc.es.300.bin')
+        self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
         return self.fasttext
     
     def get_word_fast_text_vector(self,vector_words):
