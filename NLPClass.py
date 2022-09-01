@@ -678,19 +678,21 @@ class NLPClass:
         return text
         
     # Defino una funcion que recibe un texto y devuelve el mismo texto sin signos,
-    def clean_text(self, text):
+    def clean_text(self, text, char_replace = ''):
         
         # pasa las mayusculas del texto a minusculas
         text = text.lower()                                              
         # reemplaza texto entre corchetes por espacio en blanco.. ¿ y \% no se..
-        text = re.sub('\[.*?¿\]\%', '', text)                           
+        text = re.sub('\[.*?¿\]\%', char_replace, text)                           
         # reemplaza signos de puntuacion por espacio en blanco.. %s -> \S+ es cualquier caracter que no sea un espacio en blanco
-        text = re.sub('[%s]' % re.escape(string.punctuation), '', text) 
+        text = re.sub('[%s]' % re.escape(string.punctuation), char_replace, text) 
         # remueve palabras que contienen numeros.
-        text = re.sub('\w*\d\w*', '', text)       
+        text = re.sub('\w*\d\w*', char_replace, text)       
         # Sacamos comillas, los puntos suspensivos, <<, >>
-        text = re.sub('[‘’“”…«»]', '', text)
-        text = re.sub('\n', ' ', text)                  
+        text = re.sub('[‘’“”…«»]', char_replace, text)
+        # Conservo solo caracteres alfanuméricos
+        text = re.sub('[^a-zA-Z0-9 \náéíóúÁÉÍÓÚñÑ\.]', char_replace, text)
+        text = re.sub('\n', char_replace, text)                  
         return text
         
     def lemmatizer(self, words, language = "english"):
