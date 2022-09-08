@@ -678,7 +678,7 @@ class NLPClass:
         return text
         
     # Defino una funcion que recibe un texto y devuelve el mismo texto sin signos,
-    def clean_text(self, text, char_replace = ''):
+    def clean_text_spanish(self, text, char_replace = ''):
         
         # pasa las mayusculas del texto a minusculas
         text = text.lower()                                              
@@ -691,7 +691,7 @@ class NLPClass:
         # Sacamos comillas, los puntos suspensivos, <<, >>
         text = re.sub('[‘’“”…«»]', char_replace, text)
         # Conservo solo caracteres alfanuméricos
-        text = re.sub('[^a-zA-Z0-9 \náéíóúÁÉÍÓÚñÑ\.]', char_replace, text)
+        text = re.sub('[^a-zA-Z0-9 \náéíóúÁÉÍÓÚñÑü\.]', char_replace, text)
         text = re.sub('\n', char_replace, text)                  
         return text
         
