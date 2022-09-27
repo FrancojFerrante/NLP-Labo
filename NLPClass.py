@@ -1011,7 +1011,7 @@ class NLPClass:
                 df[column+"_"+psico_column] = np.nan
                 df[column+"_"+psico_column] = df[column+"_"+psico_column].astype(object)
                 for i,row in df.iterrows():
-                        df.at[i,column+"_"+psico_column] = [next(iter(list(set(data[data["word"] == word][psico_column].values))), None) for word in row[column]]
+                        df.at[i,column+"_"+psico_column] = [next(iter(list(set(data[data["word"] == word][psico_column].values))), np.nan) for word in row[column]]
 
         return df
 
