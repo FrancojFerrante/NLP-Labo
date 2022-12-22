@@ -1020,7 +1020,7 @@ class NLPClass:
             df:
                 codigo|diagnostico|fluency_p|fluency_animals|fluency_p_log_frq|fluency_p_sa_num_phon|fluency_animals_log_frq|fluency_animals_sa_num_phon|
                 001|AD|["papa","pintura"]|["caballo","gato"]|[1.93218,1.65155]|[4,7]|[1.92165,1.59723]|[6,4]
-                002|CTR|["piso","pintura","papa"]|["perro","gato"]|[1.55915,1.65155,1.93218]|[4,7,4]|[1.99854,1.92522]|[5,4]
+                002|CTR|["piso","pintura","papa"]|["perro","gato"]|[1.55915,1.65155,1.93218]|[4,7,4]|[1.55915,1.65155,1.93218]|[4,7,4]
         '''
         for column in tokens_columns:
                 
