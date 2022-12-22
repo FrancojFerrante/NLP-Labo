@@ -259,15 +259,34 @@ class NLPClass:
         None.
 
         '''
+        print("Acá estoy 1")
         df_translation = self.read_pickle_translation_file(path)
+        print("Acá estoy 2")
+
         for i,word in enumerate(words):
+            print("Acá estoy 3")
+
             df_check = df_translation[(df_translation.word == word) & (df_translation.lan_src == lan_src) & (df_translation.lan_dest == lan_dest)]
+            print("Acá estoy 4")
+
             if len(df_check.index) == 0:
+                print("Acá estoy 5")
+
                 print("Traduciendo " + word +": " + str(i) + "/" + str(len(words)))
+                print("Acá estoy 6")
+
                 new_row = [word,self.translate([word],lan_src,lan_dest)[0].extra_data["parsed"],lan_src,lan_dest]
+                print("Acá estoy 7")
+
                 df_length = len(df_translation)
+                print("Acá estoy 8")
+
                 df_translation.loc[df_length] = new_row
+                print("Acá estoy 9")
+
         df_translation.to_pickle(path+"//translations.pkl")
+        print("Acá estoy 10")
+
 
     
     def read_pickle_translation_file(self,path):
