@@ -286,8 +286,6 @@ class NLPClass:
 
         df_translation.to_pickle(path+"//translations.pkl")
         print("Acá estoy 10")
-
-
     
     def read_pickle_translation_file(self,path):
         '''
