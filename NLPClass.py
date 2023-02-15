@@ -8,21 +8,17 @@ Created on Tue Sep 14 10:59:05 2021
 import os
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from pathlib import Path
-import json
 from collections import Counter, OrderedDict
 
 import math
 
-import torchtext
 from torchtext.data import get_tokenizer
 
 from googletrans import Translator
 # from deep_translator import GoogleTranslator
 # pip install googletrans==4.0.0rc1
 
-import pickle
 # pip install pickle-mixin
 
 import nltk
@@ -36,8 +32,8 @@ import fasttext.util
 
 import contractions
 
-import re      # libreria de expresiones regulares
-import string   # libreria de cadena de caracteres
+import re      # library of regular expressions
+import string   # string library
 
 import itertools
 
@@ -46,7 +42,6 @@ sys.path.append("/tmp/TEST")
 
 from treetagger import TreeTagger
 
-import pathlib
 
 from scipy.spatial import distance
 from scipy.stats import kurtosis
@@ -126,10 +121,6 @@ class NLPClass:
                 if row['spanish'] not in df_translate['spanish'].values:
                     df_translate = df_translate.append(row)
 
-            
-
-            # df_translate = pd.concat([df_translate, df_auxiliar.ix[df_auxiliar._merge=='left_only', ['spanish']]])
-          
         if (path != ""):
             df_translate.to_pickle(path)
 
@@ -415,11 +406,6 @@ class NLPClass:
 
         """
         
-        # [f(x) if condition else g(x) for x in sequence]
-        # And, for list comprehensions with if conditions only,
-        
-        # [f(x) for x in sequence if condition]
-        
 
         hypernym_destiny = wn.synset(hypernym_destiny)
         total_hypernyms = synset.hypernym_paths()
@@ -492,6 +478,21 @@ class NLPClass:
             return -1
         
     def min_nodes_distance_all_words(self,words,hypernym_check= "synset.n.01"):
+        """
+        Given a list of words and a hypernym, finds the minimum number of nodes between each word's
+        synset and the given hypernym, using the hypernym_min_nodes_distance_from_synset_to_hypernym method.
+        If at least one word's minimum distance is found, returns the minimum value.
+        If none of the words have a minimum distance (i.e., they do not have the given hypernym), returns -1.    
+        
+        Args:
+        - words (list): A list of words for which to find the minimum distance to a specific hypernym.
+        - hypernym_check (str): The hypernym to which the minimum distance should be found. Default is "synset.n.01".
+    
+        Returns:
+        - int: The minimum number of nodes between each word in the input list and the specified hypernym. If no valid 
+               minimum distance is found, returns -1.
+        """
+        
         minima = []
         for word in words:
             word_min = self.hypernym_min_nodes_distance_from_synset_to_hypernym(word,hypernym_check)
@@ -547,19 +548,30 @@ class NLPClass:
         return average
     
     def cross_feature_variability(self,vector_words,concept):
+        """
+         Calculates the cross-feature variability for a given set of words and a concept.
+         This metric measures how much the semantic distances between the words and the concept vary across participants.
         
-        # Convierto a word embedding cada palabra dicha por cada paciente.
+         Args:
+         - vector_words (list): a list of strings, where each string contains a participant's transcribed words
+         - concept (string): the concept to which the distances will be calculated
+        
+         Returns:
+         - ongoing_semantic_list (list): a list of cross-feature variabilities for each participant's words in vector_words
+         """
+         
+        # I convert to word embedding every word spoken by each patient.
         words_vector = self.get_word_fast_text_vector(vector_words)
 
                 
-        # Convierto a word embedding el concepto.
+        # I convert the concept to word_embedding.
         concept_vector = self.get_word_fast_text_vector(concept)[0][0]
 
         
-        # Calculo la distancia semántica entre cada palabra y el concepto
+        # I calculate the semantic distance between each word and the concept.
         words_distances = self.cross_semantic_distance(words_vector,concept_vector)
                 
-        # Calculo la cross_feature_variability de cada paciente.
+        # I calculate the cross_feature_variability of each patient.
         
         ongoing_semantic_list = list()
         for words in words_distances:
@@ -568,7 +580,16 @@ class NLPClass:
         return ongoing_semantic_list
     
     def cross_semantic_distance(self,words_vector,concept_vector):
-        # Calculo la distancia semántica entre cada palabra y el concepto
+        """
+        Calculates the semantic distance between each word in a list of word vectors and a given concept vector.
+        
+        Args:
+            words_vector (list): A list of word vectors, where each element of the list is a list of vectors for a given patient.
+            concept_vector (list): A word vector representing a concept.
+            
+        Returns:
+            list: A list of lists containing the semantic distance between each word vector and the concept vector.
+        """
         words_distances = list()
         for i_lista, vector_list in enumerate(words_vector):
             words_distances.append([])
@@ -579,6 +600,13 @@ class NLPClass:
                 
                 
     def download_and_save_fast_text_model(self,save = True):
+        """Downloads and saves a pre-trained FastText model in Spanish.
+        Args:
+            save (bool, optional): Whether to save the model or not. Defaults to True.
+    
+        Returns:
+            fasttext.FastText._FastText: The downloaded and loaded FastText model.
+        """
         fasttext.util.download_model('es', if_exists='ignore')  # English
         ft = fasttext.load_model('cc.es.300.bin')
         if save:
@@ -587,11 +615,33 @@ class NLPClass:
         return ft
     
     def load_fast_text_model(self,path_fast_text):
+        """
+        Loads a pre-trained FastText model from disk and sets it as the model to be used by the instance of the class.
+        
+        Parameters:
+            path_fast_text (str): The path to the directory where the FastText model binary file is saved.
+            
+        Returns:
+            The FastText model object that was loaded from disk.
+        """
         self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
         return self.fasttext
     
     def get_word_fast_text_vector(self,vector_words):
-        
+        """
+        Returns the word embedding for the given list of words.
+    
+        Args:
+            vector_words (list): A list of words. Each word can be a single string or a list of strings.
+            
+        Returns:
+            list: A list of lists of word embeddings. The outer list has the same length as `vector_words`, and
+                each inner list contains the word embeddings for the corresponding element in `vector_words`.
+                
+        Raises:
+            ValueError: If the fastText model has not been loaded.
+
+        """
         words_vector = list()
         for i_lista,word_list in enumerate(vector_words):
             words_vector.append([])
@@ -601,7 +651,23 @@ class NLPClass:
         return words_vector
     
     def ongoing_semantic_distance(self,words_vector):
-                                  
+        """
+        Computes the ongoing semantic distance between pairs of words within a list of word vectors.
+
+        Args:
+            words_vector (list): A list of word vectors.
+
+        Returns:
+            list: A list of lists, where each sublist represents the ongoing semantic distance between each pair of words
+                  in the corresponding input list of word vectors. If a word vector contains NaN values, it will be
+                  excluded from the computation.
+
+        Example:
+            >>> words_vector = [[np.array([0.1, 0.2, 0.3]), np.array([0.4, 0.5, 0.6]), np.nan],
+                                [np.array([0.7, 0.8, 0.9]), np.array([0.2, 0.3, 0.4]), np.array([0.1, 0.2, 0.3])]]
+            >>> ongoing_semantic_distance(words_vector)
+            [[0.2922831028530194], [0.44797496897048146, 0.41269131875038147]]
+        """
         words_distances = list()
         for i_lista, vector_list in enumerate(words_vector):
             words_distances.append([])
@@ -630,15 +696,15 @@ class NLPClass:
 
         """
 
-        # Obtengo el vector de fasttext para cada palabra de cada paciente
+        # I obtain the fasttext vector for each word for each patient.
         words_vector = self.get_word_fast_text_vector(vector_words)
         
         
-        # Calculo la distancia semántica entre cada palabra (vector) contigua dicha por cada paciente.
+        # I calculate the semantic distance between each contiguous word (vector) spoken by each patient.
         words_distances = self.ongoing_semantic_distance(words_vector)
 
                 
-        # Calculo la Ongoing Semantic Variability de cada paciente.
+        # I calculate the Ongoing Semantic Variability of each patient.
             
         ongoing_semantic_list = list()
         for words in words_distances:
@@ -648,66 +714,129 @@ class NLPClass:
         
 
     def expand_contractions_dataframe(self, token_list):
-      
-        # Defino una funcion anonima que al pasarle un argumento devuelve el resultado de aplicarle la funcion anterior a este mismo argumento
+        """This function expands contractions in a given dataframe column.
+
+        Args:
+            token_list (pandas.Series): A series with contractions that need to be expanded.
+    
+        Returns:
+            pandas.Series: A series with the expanded contractions.
+    
+        Example:
+            >>> df = pd.DataFrame({'text': ["I don't know what I'd do without you.", "He's always on time."]})
+            >>> token_list = df['text']
+            >>> expanded_tokens = expand_contractions_dataframe(token_list)
+            >>> print(expanded_tokens)
+            0    I do not know what I would do without you.
+            1                      He is always on time.
+            Name: text, dtype: object
+        """
+        # I define an anonymous function that when passed an argument returns the result of applying the previous function to the same argument.
         round0 = lambda x: contractions.fix(x)
         
-        # Dataframe que resulta de aplicarle a las columnas la funcion de limpieza
+        # Dataframe resulting from applying the cleanup function to the columns
         token_expanded = token_list.apply(round0)
         
         return token_expanded
     
     def expand_contractions(self, token):
+        """This function expands a contraction in a given token.
+        Args:
+            token (str): A string containing a contraction that needs to be expanded.
+        
+        Returns:
+            str: A string with the expanded contraction.
+        
+        Example:
+            >>> token = "I can't believe it's raining again."
+            >>> expanded_token = expand_contractions(token)
+            >>> print(expanded_token)
+            I cannot believe it is raining again.
+        """
       
-        # Expando el token
+        # Expand the token
         token_expanded = contractions.fix(token)
               
         return token_expanded
     
-    # Defino una funcion que recibe un texto y devuelve el mismo texto sin signos,
     def clean_text_paula(self, text):
+        """This function cleans a given text by removing punctuation marks.
+
+        Args:
+            text (str): A string containing the text to be cleaned.
         
-        # pasa las mayusculas del texto a minusculas
+        Returns:
+            str: A string with no punctuation marks.
+        
+        Example:
+            >>> text = "This is a sentence! It has punctuation, and some numbers 12345."
+            >>> cleaned_text = clean_text_paula(text)
+            >>> print(cleaned_text)
+            this is a sentence it has punctuation and some numbers
+        """
+        
+        # capitalize the text to lowercase letters
         text = text.lower()                                              
-        # reemplaza texto entre corchetes por espacio en blanco.. ¿ y \% no se..
+        # replaces bracketed text with white space... ¿ and \% I do not know...
+        
         text = " ".join(re.findall('(?<!\S)[a-z_]+(?=[,.!?:;]?(?!\S))', text))
                      
-        # reemplaza texto entre corchetes por espacio en blanco.. ¿ y \% no se..
         text = re.sub('[%s]' % re.escape(string.punctuation), ' ', text) 
 
-        # # reemplaza signos de puntuacion por espacio en blanco.. %s -> \S+ es cualquier caracter que no sea un espacio en blanco
+        # # replaces punctuation marks with whitespace... %s -> \S+ is any character that is not a blank space.
         # text = re.sub('[%s]' % re.escape(string.punctuation), '', text) 
-        # # remueve palabras que contienen numeros.
+        # # removes words containing numbers.
         # text = re.sub('\w*\d\w*', '', text)       
-        # # Sacamos comillas, los puntos suspensivos, <<, >>
+        # # We remove quotation marks, ellipses, <<, >>.
         # text = re.sub('[‘’“”…«»]', '', text)
         # text = re.sub('\n', ' ', text)                  
         return text
         
-    # Defino una funcion que recibe un texto y devuelve el mismo texto sin signos,
     def clean_text_spanish(self, text, char_replace = ''):
-        
-        # pasa las mayusculas del texto a minusculas
+        """
+        This function takes a text and removes all punctuation marks, words containing numbers, and other characters
+        that are not alphanumeric or whitespace. It also converts the text to lowercase and replaces certain
+        characters with a user-specified replacement character.
+    
+        Args:
+            text (str): The input text to be cleaned.
+            char_replace (str, optional): The character to replace all removed characters with. Defaults to an
+                empty string.
+    
+        Returns:
+            str: The cleaned text with no punctuation marks, words containing numbers, or other unwanted characters.
+        """        
+        # capitalize the text to lowercase letters
         text = text.lower()                                              
-        # reemplaza texto entre corchetes por espacio en blanco.. ¿ y \% no se..
+        # replaces bracketed text with white space... ¿ and \% I do not know...
         text = re.sub('\[.*?¿\]\%', char_replace, text)                           
-        # reemplaza signos de puntuacion por espacio en blanco.. %s -> \S+ es cualquier caracter que no sea un espacio en blanco
+        # # replaces punctuation marks with whitespace... %s -> \S+ is any character that is not a blank space.
         text = re.sub('[%s]' % re.escape(string.punctuation), char_replace, text) 
-        # remueve palabras que contienen numeros.
+        # # removes words containing numbers.
         text = re.sub('\w*\d\w*', char_replace, text)       
-        # Sacamos comillas, los puntos suspensivos, <<, >>
+        # # We remove quotation marks, ellipses, <<, >>.
         text = re.sub('[‘’“”…«»]', char_replace, text)
-        # Conservo solo caracteres alfanuméricos
+        # I keep only alphanumeric characters
         text = re.sub('[^a-zA-Z0-9 \náéíóúÁÉÍÓÚñÑü\.]', char_replace, text)
         text = re.sub('\n', char_replace, text)                  
         return text
         
     def lemmatizer(self, words, language = "english"):
-            
+        """
+        This function takes a list of words and returns a new list of words where each word has been lemmatized. The
+        function supports two languages: English and Spanish.
+    
+        Args:
+            words (list): A list of words to be lemmatized.
+            language (str, optional): The language of the input text. Defaults to "english".
+    
+        Returns:
+            list: A new list of lemmatized words.
+        """
         words_clean = []
         if (language == "english"):
             nltk.download('wordnet')
-            lemmatizer = WordNetLemmatizer() # funcion para lematizar
+            lemmatizer = WordNetLemmatizer() # lemmatizing function
             for w in words:
                 words_clean.append(lemmatizer.lemmatize(w))
         elif (language == "spanish"):
@@ -718,18 +847,39 @@ class NLPClass:
         return words_clean
     
     def remove_stopwords(self,words,language = "english"):
-
-        nltk.download('stopwords') # hay que descargar este modulo en particular
-        sw = nltk.corpus.stopwords.words(language) # lista de stopwords
+        """
+        This function takes a list of words and removes any stop words from it, where stop words are defined as words
+        that are considered to be uninformative and are usually removed from text before processing. The function
+        supports two languages: English and Spanish.
+    
+        Args:
+            words (list): A list of words to be filtered.
+            language (str, optional): The language of the input text. Defaults to "english".
+    
+        Returns:
+            list: A new list of words with all stop words removed.
+        """
+        nltk.download('stopwords') # this particular module must be downloaded
+        sw = nltk.corpus.stopwords.words(language) # stopwords list
 
         words_clean = []
         for w in words:
-          if not w in sw: # si no es stopword, agregamos la version lematizada
+          if not w in sw: # if it is not stopword, we add the lemmatized version
             words_clean.append(w)
         return words_clean
     
     def normalize_noun_count(self,df_tagged,language="english"):
-        
+        """
+        This function takes a pandas dataframe that contains tagged text, and returns the proportion of words in the text
+        that are nouns. The function supports two languages: English and Spanish.
+    
+        Args:
+            df_tagged (pandas.DataFrame): A dataframe containing tagged text.
+            language (str, optional): The language of the input text. Defaults to "english".
+    
+        Returns:
+            float: The proportion of words in the text that are nouns.
+        """
         noun_counter=0
         if (language=="english"):
             for i,row in df_tagged.iterrows():
@@ -742,6 +892,17 @@ class NLPClass:
         return noun_counter/(len(df_tagged.index))
     
     def normalize_verb_count(self,df_tagged,language="english"):
+        """
+        This function takes a pandas dataframe that contains tagged text, and returns the proportion of words in the text
+        that are verbs. The function supports two languages: English and Spanish.
+        
+        Args:
+            df_tagged (pandas.DataFrame): A dataframe containing tagged text.
+            language (str, optional): The language of the input text. Defaults to "english".
+        
+        Returns:
+            float: The proportion of words in the text that are nouns.
+        """
         verb_counter=0
         for i,row in df_tagged.iterrows():
             if(str(row[1]).startswith("V")):
@@ -749,7 +910,17 @@ class NLPClass:
         return verb_counter/(len(df_tagged.index))
     
     def normalize_adj_count(self,df_tagged,language="english"):
+        """
+        This function takes a pandas dataframe that contains tagged text, and returns the proportion of words in the text
+        that are adjectives. The function supports two languages: English and Spanish.
         
+        Args:
+            df_tagged (pandas.DataFrame): A dataframe containing tagged text.
+            language (str, optional): The language of the input text. Defaults to "english".
+        
+        Returns:
+            float: The proportion of words in the text that are nouns.
+        """
         adj_counter=0
         if (language=="english"):
             for i,row in df_tagged.iterrows():
@@ -762,7 +933,17 @@ class NLPClass:
         return adj_counter/(len(df_tagged.index))
     
     def normalize_adv_count(self,df_tagged,language="english"):
-        
+        """
+        This function takes a pandas dataframe that contains tagged text, and returns the proportion of words in the text
+        that are adverbs. The function supports two languages: English and Spanish.
+    
+        Args:
+            df_tagged (pandas.DataFrame): A dataframe containing tagged text.
+            language (str, optional): The language of the input text. Defaults to "english".
+    
+        Returns:
+            float: The proportion of words in the text that are nouns.
+        """        
         adv_counter=0
         if (language=="english"):
             for i,row in df_tagged.iterrows():
@@ -776,7 +957,17 @@ class NLPClass:
     
     
     def normalize_noun_count_content(self,df_tagged,language="english"):
+        """
+        This function takes a pandas dataframe that contains tagged text, and returns the proportion of content words in the text
+        that are nouns. The function supports two languages: English and Spanish.
         
+        Args:
+            df_tagged (pandas.DataFrame): A dataframe containing tagged text.
+            language (str, optional): The language of the input text. Defaults to "english".
+        
+        Returns:
+            float: The proportion of words in the text that are nouns.
+        """
         noun_counter=0
         content_word_counter=0
 
@@ -798,6 +989,17 @@ class NLPClass:
         return noun_counter/content_word_counter
     
     def normalize_verb_count_content(self,df_tagged,language="english"):
+        """
+        This function takes a pandas dataframe that contains tagged text, and returns the proportion of content words in the text
+        that are verbs. The function supports two languages: English and Spanish.
+        
+        Args:
+            df_tagged (pandas.DataFrame): A dataframe containing tagged text.
+            language (str, optional): The language of the input text. Defaults to "english".
+        
+        Returns:
+            float: The proportion of words in the text that are nouns.
+        """
         verb_counter=0
         content_word_counter=0
 
@@ -819,6 +1021,17 @@ class NLPClass:
         return verb_counter/content_word_counter
     
     def normalize_adj_count_content(self,df_tagged,language="english"):
+        """
+        This function takes a pandas dataframe that contains tagged text, and returns the proportion of content words in the text
+        that are adjectives. The function supports two languages: English and Spanish.
+        
+        Args:
+            df_tagged (pandas.DataFrame): A dataframe containing tagged text.
+            language (str, optional): The language of the input text. Defaults to "english".
+        
+        Returns:
+            float: The proportion of words in the text that are nouns.
+        """
         adj_counter=0
         content_word_counter=0
 
@@ -840,6 +1053,17 @@ class NLPClass:
         return adj_counter/content_word_counter
         
     def normalize_adv_count_content(self,df_tagged,language="english"):
+        """
+        This function takes a pandas dataframe that contains tagged text, and returns the proportion of content words in the text
+        that are adverbs. The function supports two languages: English and Spanish.
+        
+        Args:
+            df_tagged (pandas.DataFrame): A dataframe containing tagged text.
+            language (str, optional): The language of the input text. Defaults to "english".
+        
+        Returns:
+            float: The proportion of words in the text that are nouns.
+        """
         adv_counter=0
         content_word_counter=0
 
@@ -861,13 +1085,33 @@ class NLPClass:
         return adv_counter/content_word_counter
     
     def TreeTagger_text_to_list(self,text,language = "spanish"):
-        
+        """
+        This function takes a string of text and uses TreeTagger to annotate each word in the text with its part of speech.
+        The function returns a list of (word, tag) tuples. The function supports two languages: English and Spanish.
+    
+        Args:
+            text (str): A string of text to be annotated.
+            language (str, optional): The language of the input text. Defaults to "spanish".
+    
+        Returns:
+            list: A list of (word, tag) tuples where each tuple represents a word in the text and its part of speech.
+        """
         tt = TreeTagger(path_to_treetagger='C:\TreeTagger',language=language);
         resultado = tt.tag(text);
         return resultado
 
     def Filter_tagged_words_list(self,tagged_list,word_type='NN'):
+        """
+        This function takes a list of (word, tag) tuples and returns a filtered list containing only those tuples whose
+        tag matches a specified part of speech. The default part of speech is noun (NN).
         
+        Args:
+            tagged_list (list): A list of (word, tag) tuples.
+            word_type (str, optional): The part of speech to filter the list by. Defaults to 'NN'.
+        
+        Returns:
+            list: A list of (word, tag) tuples whose tag matches the specified part of speech.
+        """
         tag_filtered = []
         for tag in tagged_list:
             if (tag[1]==word_type):
@@ -939,6 +1183,16 @@ class NLPClass:
             filtered_data.to_csv(filename_to_save,encoding='utf8',index=False)
             
     def clusterization(self,vector_words):
+        """
+        This function performs hierarchical clustering on a set of vectors, returning a list of clusters.
+        
+        Args:
+            vector_words (list): A list of numpy arrays representing word vectors.
+        
+        Returns:
+            list: A list of clusters, where each cluster is a list of numpy arrays representing word vectors. If there is
+            only one vector in the input list, returns NaN.
+        """
         if len(vector_words)>1:
             acum = 0
             for i in range(0,len(vector_words)-1):
@@ -1073,25 +1327,3 @@ class NLPClass:
                     df.at[i,column+"_"+psico_column+"_skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])    
         return df
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-                                
-        
