@@ -47,6 +47,11 @@ from scipy.spatial import distance
 from scipy.stats import kurtosis
 from scipy.stats import skew
 
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+import shutil
+
 class NLPClass:
     def __init__(self):
         self.numero = 1
@@ -818,7 +823,9 @@ class NLPClass:
         text = re.sub('[‘’“”…«»]', char_replace, text)
         # I keep only alphanumeric characters
         text = re.sub('[^a-zA-Z0-9 \náéíóúÁÉÍÓÚñÑü\.]', char_replace, text)
-        text = re.sub('\n', char_replace, text)                  
+        text = re.sub('\n', char_replace, text)   
+        text = re.sub('\s+', ' ', text) 
+                       
         return text
         
     def lemmatizer(self, words, language = "english"):
@@ -1327,3 +1334,163 @@ class NLPClass:
                     df.at[i,column+"_"+psico_column+"_skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])    
         return df
             
+    def get_last_txt_download(self,directory):
+        files = [f for f in os.listdir(directory) if f.endswith(".txt") and os.path.isfile(os.path.join(directory, f))]
+        return max(files, key=lambda x: os.path.getctime(os.path.join(directory, x)))
+    
+    def espal_feature_extraction(self, words_path,download_path,save_path,list_psycho):
+        """
+        Extracts linguistic features from a list of words using the ESPAL database.
+
+        Args:
+        - words_path (str): The path to a text file containing a list of words to extract features from.
+        - download_path (str): The path to the folder where the downloaded files will be stored.
+        - save_path (str): The path to the folder where the output files will be saved.
+
+        Returns:
+        None.
+
+        This function automates the process of navigating the ESPAL database website to extract various 
+        linguistic features for a list of words. The function starts a new Edge browser session, navigates 
+        to the ESPAL website, selects various feature checkboxes, uploads a list of words, downloads the feature data, 
+        and saves it to a specified folder. The function requires an internet connection and the Edge browser driver 
+        to be installed on the local system.
+        """
+
+        # start a new Edge browser session
+        browser = webdriver.Edge()
+        # wait for the file to download
+        time.sleep(1)
+
+        # navigate to the target website
+        browser.get("https://www.bcbl.eu/databases/espal/")
+
+        time.sleep(5)
+
+        #wait = WebDriverWait(browser, 10)
+
+        element = browser.find_element(By.XPATH, "//form[@name='phonologyForm']/h4[2]/input[@type='radio']")
+        element.click()
+
+        # Find the first button in the intro_menu class
+        first_button = browser.find_element(By.XPATH, "//div[@class='intro_menu']/p[1]/a")
+
+        # Click on the first button
+        first_button.click()
+
+        # wait for the new page to load
+        time.sleep(5)
+
+        #### check the log_frq checkbox
+
+        if "log_frq" in list_psycho:
+            container = browser.find_element(By.XPATH, '//div[@id="select"]//div[@class="idx_group"]//a[@class="btn_group"][@id="switch1"]')
+            container.click()
+    
+            time.sleep(1)
+    
+            # locate the checkbox element by its id attribute
+            checkbox = browser.find_element(By.XPATH, "//input[@type='checkbox' and @id='log_frq']")
+    
+            # check the checkbox
+            checkbox.click()
+    
+            time.sleep(1)
+
+        if ("sa_num_phon" in list_psycho) or ("sa_num_syll" in list_psycho):
+            #### check the number of phonemes and number of syllabes checkbox
+            # expando el contenedor
+            container = browser.find_element(By.XPATH, '//div[@id="select"]//div[@class="idx_group"]//a[@class="btn_group"][@id="switch4"]')
+            container.click()
+    
+            time.sleep(1)
+    
+            if ("sa_num_phon" in list_psycho):
+                # locate the checkbox element by its id attribute
+                checkbox = browser.find_element(By.XPATH, "//input[@type='checkbox' and @id='num_phon']")
+        
+                # check the checkbox
+                checkbox.click()
+                
+            if ("sa_num_syll" in list_psycho):
+                # locate the checkbox element by its id attribute
+                checkbox = browser.find_element(By.XPATH, "//input[@type='checkbox' and @id='num_syll']")
+        
+                # check the checkbox
+                checkbox.click()
+    
+            time.sleep(1)
+
+        if ("sa_NP" in list_psycho):
+            #### check the number of phonological neighborhoods checkbox
+            # expando el contenedor
+            container = browser.find_element(By.XPATH, '//div[@id="select"]//div[@class="idx_group"]//a[@class="btn_group"][@id="switch5"]')
+            container.click()
+    
+            time.sleep(1)
+    
+            # locate the checkbox element by its id attribute
+            checkbox = browser.find_element(By.XPATH, "//input[@type='checkbox' and @id='NP']")
+    
+            # check the checkbox
+            checkbox.click()
+    
+            time.sleep(1)
+
+        if ("familiarity" in list_psycho) or ("imageability" in list_psycho) or ("concreteness" in list_psycho):
+            #### check the all subjective ratings checkbox
+            # expando el contenedor
+            container = browser.find_element(By.XPATH, '//div[@id="select"]//div[@class="idx_group"]//a[@class="btn_group"][@id="switchSubjective"]')
+            container.click()
+    
+            time.sleep(1)
+    
+            if ("familiarity" in list_psycho):
+                # locate the checkbox element by its id attribute
+                checkbox = browser.find_element(By.XPATH, "//input[@type='checkbox' and @id='familiarity']")
+                checkbox.click()
+            
+            if ("imageability" in list_psycho):
+                # locate the checkbox element by its id attribute
+                checkbox = browser.find_element(By.XPATH, "//input[@type='checkbox' and @id='imageability']")
+                checkbox.click()
+    
+            if ("concreteness" in list_psycho):
+                # locate the checkbox element by its id attribute
+                checkbox = browser.find_element(By.XPATH, "//input[@type='checkbox' and @id='concreteness']")
+                checkbox.click()
+            time.sleep(1)
+
+
+        #### upload the .txt file
+        # locate the file input element by its name attribute
+        file_input = browser.find_element(By.XPATH, "//input[@type='file' and @name='words_file']")
+
+        # send the file path to the file input element
+        file_input.send_keys(words_path)
+
+        # submit the form
+        file_input.submit()
+
+        # wait for the file to download
+        time.sleep(5)
+
+
+        ########## Entro a la página de descarga
+
+        # locate the download button element and click it
+        download_link = browser.find_element(By.XPATH,"//td/a[@class='btn_download']")
+        download_link.click()
+
+        # wait for the file to download
+        time.sleep(5)
+
+        # locate the downloaded file
+        last_txt_download = self.get_last_txt_download(download_path)
+
+        # move the downloaded file to the desired path
+        desired_path = os.path.expanduser(save_path)
+        shutil.move(download_path+"/"+last_txt_download, desired_path)
+
+        # close the browser
+        browser.quit()
