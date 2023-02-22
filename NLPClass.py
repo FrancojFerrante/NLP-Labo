@@ -256,12 +256,16 @@ class NLPClass:
 
         '''
         df_translation = self.read_pickle_translation_file(path)
+        
+        traducidas = 0
 
         for i,word in enumerate(words):
 
             df_check = df_translation[(df_translation.word == word) & (df_translation.lan_src == lan_src) & (df_translation.lan_dest == lan_dest)]
 
             if len(df_check.index) == 0:
+                
+                traducidas +=1
 
                 print("Traduciendo " + word +": " + str(i) + "/" + str(len(words)))
 
@@ -270,7 +274,10 @@ class NLPClass:
                 df_length = len(df_translation)
 
                 df_translation.loc[df_length] = new_row
-
+                
+            if traducidas%50 == 0:
+                df_translation.to_pickle(path+"//translations.pkl")
+                
         df_translation.to_pickle(path+"//translations.pkl")
     
     def read_pickle_translation_file(self,path):
