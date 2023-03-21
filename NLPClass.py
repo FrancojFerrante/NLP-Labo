@@ -153,7 +153,7 @@ class NLPClass:
       '''
       
       tokenizer = get_tokenizer(tokenizer_type)
-      tokens = [tokenizer(x) if str(x)!="nan" else x for x in text_dataframe]
+      tokens = [tokenizer(x) if ((str(x)!="nan") and len(x)<100)else x for x in text_dataframe]
       return tokens
   
     def count_words(self, tokens, percentaje = 0):
