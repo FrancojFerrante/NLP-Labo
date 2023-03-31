@@ -89,3 +89,6 @@ MCR/generate_all.sh
 =======
 cc.es.300.bin
 >>>>>>> Stashed changes
+*.pyc
+__pycache__/NLPClass.cpython-39.pyc
+__pycache__/treetagger.cpython-39.pyc
