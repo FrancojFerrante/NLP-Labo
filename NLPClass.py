@@ -183,7 +183,8 @@ class NLPClass:
         for s in tokens:
             if str(s) != "nan":
                 for w in s:
-                    words[w] += 1
+                    if len(w) < 200:
+                        words[w] += 1
                 
         sorted_words = OrderedDict(words.most_common())
         
@@ -267,7 +268,7 @@ class NLPClass:
                 
                 traducidas +=1
 
-                print("Traduciendo " + word +": " + str(i) + "/" + str(len(words)))
+                print(str(traducidas) + ") Traduciendo " + word +": " + str(i) + "/" + str(len(words)))
 
                 new_row = [word,self.translate([word],lan_src,lan_dest)[0].extra_data["parsed"],lan_src,lan_dest]
 
@@ -329,7 +330,7 @@ class NLPClass:
         translator = Translator()
         translated_objects = []
         for element in text:
-            translated_objects.append(translator.translate(element, src=lan_src, dest=lan_dest))
+            translated_objects.append(translator.translate(str(element), src=lan_src, dest=lan_dest))
         return translated_objects
     
     def translate_checking_wordnet_and_hypernym(self, texts, df_translate = None, hypernym_check = '', len_src = 'spanish', len_dest = 'english'):
@@ -1286,11 +1287,19 @@ class NLPClass:
                 df[column+"_"+psico_column] = np.nan
                 df[column+"_"+psico_column] = df[column+"_"+psico_column].astype(object)
                 for i,row in df.iterrows():
-                        df.at[i,column+"_"+psico_column] = [next(iter(list(set(data[data["word"] == word][psico_column].values))), np.nan) for word in row[column]]
+                    respuesta = []
+                    for i_response, response in enumerate(row[column]):
+                        if (len(response.split()) == 1):
+                            respuesta.append(next(iter(list(set(data[data["word"] == response][psico_column].values))), np.nan))
+                        else:
+                            lista_sub_values = [next(iter(list(set(data[data["word"] == word][psico_column].values))), np.nan) for word in response.split()]
+                            respuesta.append(np.nanmean(lista_sub_values))
+                    df.at[i,column+"_"+psico_column] = respuesta
+                        
 
         return df
 
-    def obtain_stadistic_values(self,df,psycholinguistics_columns,tokens_columns):
+    def obtain_stadistic_values(self,df,psycholinguistics_columns,tokens_columns,list_statistics = ["promedio","minimo","maximo","std","mediana","curtosis","skewness"]):
         '''
         It obtains the promedio, minimo, maximo, std, mediana, curtosis and skewness
         of each psycholinguistic variable of each fluency task.
@@ -1315,30 +1324,46 @@ class NLPClass:
         '''
         for column in tokens_columns:
             for psico_column in psycholinguistics_columns:    
-                df[column+"_"+psico_column+"_promedio"] = np.nan
-                df[column+"_"+psico_column+"_minimo"] = np.nan
-                df[column+"_"+psico_column+"_maximo"] = np.nan
-                df[column+"_"+psico_column+"_std"] = np.nan
-                df[column+"_"+psico_column+"_mediana"] = np.nan
-                df[column+"_"+psico_column+"_curtosis"] = np.nan
-                df[column+"_"+psico_column+"_skewness"] = np.nan
+                if "promedio" in list_statistics:
+                    df[column+"_"+psico_column+"_promedio"] = np.nan
+                if "minimo" in list_statistics:
+                    df[column+"_"+psico_column+"_minimo"] = np.nan
+                if "maximo" in list_statistics:
+                    df[column+"_"+psico_column+"_maximo"] = np.nan
+                if "std" in list_statistics:
+                    df[column+"_"+psico_column+"_std"] = np.nan
+                if "mediana" in list_statistics:
+                    df[column+"_"+psico_column+"_mediana"] = np.nan
+                if "curtosis" in list_statistics:
+                    df[column+"_"+psico_column+"_curtosis"] = np.nan
+                if "skewness" in list_statistics:
+                    df[column+"_"+psico_column+"_skewness"] = np.nan
         
         
             for i,row in df.iterrows():
                 for psico_column in psycholinguistics_columns:
                     df.at[i,column+"_"+psico_column] = [i for i in row[column+"_"+psico_column] if i]
                     calculation_list = df.at[i,column+"_"+psico_column]
-                    df.at[i,column+"_"+psico_column+"_promedio"] = np.nanmean(calculation_list)
+                    if "promedio" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_promedio"] = np.nanmean(calculation_list)
                     if (len(calculation_list)==0):
-                        df.at[i,column+"_"+psico_column+"_minimo"] = np.nan
-                        df.at[i,column+"_"+psico_column+"_maximo"] = np.nan
+                        if "minimo" in list_statistics:
+                            df.at[i,column+"_"+psico_column+"_minimo"] = np.nan
+                        if "maximo" in list_statistics:
+                            df.at[i,column+"_"+psico_column+"_maximo"] = np.nan
                     else:
-                        df.at[i,column+"_"+psico_column+"_minimo"] = np.nanmin(calculation_list)
-                        df.at[i,column+"_"+psico_column+"_maximo"] = np.nanmax(calculation_list)
-                    df.at[i,column+"_"+psico_column+"_std"] = np.nanstd(calculation_list)
-                    df.at[i,column+"_"+psico_column+"_mediana"] = np.nanmedian(calculation_list)
-                    df.at[i,column+"_"+psico_column+"_curtosis"] = kurtosis([x for x in calculation_list if str(x) != 'nan'])
-                    df.at[i,column+"_"+psico_column+"_skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])    
+                        if "minimo" in list_statistics:
+                            df.at[i,column+"_"+psico_column+"_minimo"] = np.nanmin(calculation_list)
+                        if "maximo" in list_statistics:
+                            df.at[i,column+"_"+psico_column+"_maximo"] = np.nanmax(calculation_list)
+                    if "std" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_std"] = np.nanstd(calculation_list)
+                    if "mediana" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_mediana"] = np.nanmedian(calculation_list)
+                    if "curtosis" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_curtosis"] = kurtosis([x for x in calculation_list if str(x) != 'nan'])
+                    if "skewness" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])    
         return df
             
     def get_last_txt_download(self,directory):
@@ -1501,3 +1526,102 @@ class NLPClass:
 
         # close the browser
         browser.quit()
+
+    def calculate_semantic_granularity(self, df_original, columnas, df_translated, list_statistics = ["promedio","minimo","maximo","std","mediana","curtosis","skewness"]):
+        """
+        Calculates the semantic granularity for the specified columns in a DataFrame.
+        
+        Args:
+            df_original (DataFrame): The original DataFrame to which the granularity columns will be added.
+            columns (list): A list of column names in the DataFrame to be analyzed.
+            df_translated (DataFrame): The DataFrame that contains word translations.
+            nlp_class (object): An instance of the NLP class used for semantic calculations.
+            list_statistics (list). The list of statistics to calculate from the granularity vector
+    
+        Returns:
+            DataFrame: The original DataFrame with the added and updated granularity columns.
+    
+        Note:
+            The function directly modifies the `df_original` DataFrame by adding the granularity columns.
+            Make sure you have enough available memory to hold the results.
+    
+        """
+        
+        maxima_granularidad = -2
+    
+        for columna in columnas:
+    
+            df_original[columna + "_granularidad"] = np.nan
+            df_original[columna + "_granularidad"] = df_original[columna+"_granularidad"].astype(object)
+            if "promedio" in list_statistics:
+                df_original[columna + "_granularidad"+"_promedio"] = np.nan
+            if "minimo" in list_statistics:
+                df_original[columna + "_granularidad"+"_minimo"] = np.nan
+            if "maximo" in list_statistics:
+                df_original[columna + "_granularidad"+"_maximo"] = np.nan
+            if "std" in list_statistics:
+                df_original[columna + "_granularidad"+"_std"] = np.nan
+            if "mediana" in list_statistics:
+                df_original[columna + "_granularidad"+"_mediana"] = np.nan
+            if "curtosis" in list_statistics:
+                df_original[columna + "_granularidad"+"_curtosis"] = np.nan
+            if "skewness" in list_statistics:
+                df_original[columna + "_granularidad"+"_skewness"] = np.nan
+            if "porc_nans" in list_statistics:
+                df_original[columna + "_granularidad"+"_porc_nans"] = np.nan
+            
+    
+            for i,row in df_original.iterrows():
+                lista = []
+                palabras_sustantivos = []
+                for palabra in row[columna]:
+                    translation = df_translated[(df_translated["word"] == palabra) &
+                                                (df_translated["lan_src"] == "spanish") &
+                                                (df_translated["lan_dest"] == "english")]
+                    if (len(translation.index)>1):
+                        print("Hay mas de una traduccion para esa palabra")
+                    else:
+                        posibles_traducciones = []
+                        for j in range(0,len(translation["translation"].values[0][1][0][0][5][0][4])):
+                            posibles_traducciones.append(translation["translation"].values[0][1][0][0][5][0][4][j][0].lower())
+    
+                        granularidad = self.min_nodes_distance_all_words(posibles_traducciones,hypernym_check="entity.n.01")
+                        lista.append(granularidad)
+                        if granularidad != -1:
+                            palabras_sustantivos.append(palabra)
+    
+                if "porc_nans" in list_statistics:
+                    if (len(lista)>0):
+                        df_original.at[i,columna + "_granularidad"+"_porc_nans"] = (len([x for x in lista if x == -1])*100) / len(lista)
+                    else:
+                        df_original.at[i,columna + "_granularidad"+"_porc_nans"] = 0
+    
+                lista = [x for x in lista if x != -1]
+                if len(lista)>0:
+                    if np.max(lista)>maxima_granularidad:
+                        maxima_granularidad = np.max(lista)
+                df_original.at[i,columna + "_granularidad"] = lista
+                if "promedio" in list_statistics:
+                    df_original.at[i,columna + "_granularidad"+"_promedio"] = np.nanmean(lista)
+                if (len(lista)==0):
+                    if "minimo" in list_statistics:
+                        df_original.at[i,columna + "_granularidad"+"_minimo"] = np.nan
+                    if "maximo" in list_statistics:
+                        df_original.at[i,columna + "_granularidad"+"_maximo"] = np.nan
+                else:
+                    if "minimo" in list_statistics:
+                        df_original.at[i,columna + "_granularidad"+"_minimo"] = np.nanmin(lista)
+                    if "maximo" in list_statistics:
+                        df_original.at[i,columna + "_granularidad"+"_maximo"] = np.nanmax(lista)
+                if "std" in list_statistics:
+                    df_original.at[i,columna + "_granularidad"+"_std"] = np.nanstd(lista)
+                if "mediana" in list_statistics:
+                    df_original.at[i,columna + "_granularidad"+"_mediana"] = np.nanmedian(lista)
+                if "curtosis" in list_statistics:
+                    df_original.at[i,columna + "_granularidad"+"_curtosis"] = kurtosis([x for x in lista if str(x) != 'nan'])
+                if "skewness" in list_statistics:
+                    df_original.at[i,columna + "_granularidad"+"_skewness"] = skew([x for x in lista if str(x) != 'nan'])
+                    
+                return df_original
+
+            
