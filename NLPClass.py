@@ -52,6 +52,10 @@ from selenium.webdriver.common.by import By
 import time
 import shutil
 
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+# !pip install transformers
+# !pip install sentencepiece
+
 class NLPClass:
     def __init__(self):
         self.numero = 1
@@ -332,6 +336,32 @@ class NLPClass:
         for element in text:
             translated_objects.append(translator.translate(str(element), src=lan_src, dest=lan_dest))
         return translated_objects
+    
+    def translate_hugging_es_en(self, save_path, text):
+        """
+        Translates text from Spanish to English using the Hugging Face library.
+        
+        Args:
+            save_path (str): Path to the directory where the model will be saved or loaded from.
+            text (str): The input text to be translated.
+        
+        Returns:
+            str: The translated text in English.
+        """
+
+        # Ruta a donde queremos guardar el modelo, una vez que este descargado solo
+        # hay que cargarlo manteniendo esa misma ruta (en este caso son 300 MB aprox).
+        cache_directory = save_path 
+        model_name = "Helsinki-NLP/opus-mt-es-en"
+
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=cache_directory)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_directory)
+
+        input_ids = tokenizer.encode(text, return_tensors="pt")
+        outputs = model.generate(input_ids)
+        translated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        
+        return translated_text
     
     def translate_checking_wordnet_and_hypernym(self, texts, df_translate = None, hypernym_check = '', len_src = 'spanish', len_dest = 'english'):
         '''
@@ -1623,5 +1653,6 @@ class NLPClass:
                     df_original.at[i,columna + "_granularidad"+"_skewness"] = skew([x for x in lista if str(x) != 'nan'])
                     
                 return df_original
+
 
             
