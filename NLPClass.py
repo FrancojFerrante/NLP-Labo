@@ -153,7 +153,7 @@ class NLPClass:
       '''
       
       tokenizer = get_tokenizer(tokenizer_type)
-      tokens = [tokenizer(x) if ((str(x)!="nan") and len(x)<100)else x for x in text_dataframe]
+      tokens = [tokenizer(x) if ((str(x)!="nan"))else x for x in text_dataframe]
       return tokens
   
     def count_words(self, tokens, percentaje = 0):
@@ -1290,6 +1290,38 @@ class NLPClass:
 
         return df
 
+
+    def psycholinguistics_features_optimized(self, data, psycholinguistics_columns, tokens_columns, df):
+        # Crear un diccionario para buscar valores de psicolingüística por palabra
+        psycholinguistics_dict = {}
+        for word in data['word']:
+            psycholinguistics_dict[word] = {
+                col: data.loc[data['word'] == word, col].values[0]
+                for col in psycholinguistics_columns
+            }
+        
+        # Crear nuevas columnas en el DataFrame
+        new_columns = []
+        total_iterations = len(tokens_columns) * len(psycholinguistics_columns)
+        current_iteration = 0
+        progress_step = total_iterations // 10  # Imprimir el progreso cada 10% del avance
+        
+        for column in tokens_columns:
+            for psico_column in psycholinguistics_columns:
+                new_column_name = f"{column}_{psico_column}"
+                df[new_column_name] = df[column].apply(
+                    lambda words: [psycholinguistics_dict.get(word, np.nan)[psico_column] for word in words]
+                )
+                new_columns.append(new_column_name)
+                
+                current_iteration += 1
+                if current_iteration % progress_step == 0:
+                    progress = current_iteration / total_iterations * 100
+                    print(f"Progress: {progress:.0f}%")
+        
+        df[new_columns] = df[new_columns].astype(object)
+        
+        return df
     def obtain_stadistic_values(self,df,psycholinguistics_columns,tokens_columns):
         '''
         It obtains the promedio, minimo, maximo, std, mediana, curtosis and skewness
