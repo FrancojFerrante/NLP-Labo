@@ -1310,7 +1310,10 @@ class NLPClass:
             for psico_column in psycholinguistics_columns:
                 new_column_name = f"{column}_{psico_column}"
                 df[new_column_name] = df[column].apply(
-                    lambda words: [psycholinguistics_dict.get(word, np.nan)[psico_column] for word in words]
+                    lambda words: [
+                        psycholinguistics_dict.get(word, {}).get(psico_column, np.nan)
+                        for word in words
+                ]
                 )
                 new_columns.append(new_column_name)
                 
