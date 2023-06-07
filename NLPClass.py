@@ -1544,7 +1544,7 @@ class NLPClass:
         df[new_columns] = df[new_columns].astype(object)
         
         return df
-    def obtain_stadistic_values(self,df,psycholinguistics_columns,tokens_columns):
+    def obtain_stadistic_values(self,df,psycholinguistics_columns,tokens_columns,list_statistics = ["promedio","minimo","maximo","std","mediana","curtosis","skewness"]):
         '''
         It obtains the promedio, minimo, maximo, std, mediana, curtosis and skewness
         of each psycholinguistic variable of each fluency task.
@@ -1569,30 +1569,46 @@ class NLPClass:
         '''
         for column in tokens_columns:
             for psico_column in psycholinguistics_columns:    
-                df[column+"_"+psico_column+"_promedio"] = np.nan
-                df[column+"_"+psico_column+"_minimo"] = np.nan
-                df[column+"_"+psico_column+"_maximo"] = np.nan
-                df[column+"_"+psico_column+"_std"] = np.nan
-                df[column+"_"+psico_column+"_mediana"] = np.nan
-                df[column+"_"+psico_column+"_curtosis"] = np.nan
-                df[column+"_"+psico_column+"_skewness"] = np.nan
+                if "promedio" in list_statistics:
+                    df[column+"_"+psico_column+"_promedio"] = np.nan
+                if "minimo" in list_statistics:
+                    df[column+"_"+psico_column+"_minimo"] = np.nan
+                if "maximo" in list_statistics:
+                    df[column+"_"+psico_column+"_maximo"] = np.nan
+                if "std" in list_statistics:
+                    df[column+"_"+psico_column+"_std"] = np.nan
+                if "mediana" in list_statistics:
+                    df[column+"_"+psico_column+"_mediana"] = np.nan
+                if "curtosis" in list_statistics:
+                    df[column+"_"+psico_column+"_curtosis"] = np.nan
+                if "skewness" in list_statistics:
+                    df[column+"_"+psico_column+"_skewness"] = np.nan
         
         
             for i,row in df.iterrows():
                 for psico_column in psycholinguistics_columns:
                     df.at[i,column+"_"+psico_column] = [i for i in row[column+"_"+psico_column] if i]
                     calculation_list = df.at[i,column+"_"+psico_column]
-                    df.at[i,column+"_"+psico_column+"_promedio"] = np.nanmean(calculation_list)
+                    if "promedio" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_promedio"] = np.nanmean(calculation_list)
                     if (len(calculation_list)==0):
-                        df.at[i,column+"_"+psico_column+"_minimo"] = np.nan
-                        df.at[i,column+"_"+psico_column+"_maximo"] = np.nan
+                        if "minimo" in list_statistics:
+                            df.at[i,column+"_"+psico_column+"_minimo"] = np.nan
+                        if "maximo" in list_statistics:
+                            df.at[i,column+"_"+psico_column+"_maximo"] = np.nan
                     else:
-                        df.at[i,column+"_"+psico_column+"_minimo"] = np.nanmin(calculation_list)
-                        df.at[i,column+"_"+psico_column+"_maximo"] = np.nanmax(calculation_list)
-                    df.at[i,column+"_"+psico_column+"_std"] = np.nanstd(calculation_list)
-                    df.at[i,column+"_"+psico_column+"_mediana"] = np.nanmedian(calculation_list)
-                    df.at[i,column+"_"+psico_column+"_curtosis"] = kurtosis([x for x in calculation_list if str(x) != 'nan'])
-                    df.at[i,column+"_"+psico_column+"_skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])    
+                        if "minimo" in list_statistics:
+                            df.at[i,column+"_"+psico_column+"_minimo"] = np.nanmin(calculation_list)
+                        if "maximo" in list_statistics:
+                            df.at[i,column+"_"+psico_column+"_maximo"] = np.nanmax(calculation_list)
+                    if "std" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_std"] = np.nanstd(calculation_list)
+                    if "mediana" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_mediana"] = np.nanmedian(calculation_list)
+                    if "curtosis" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_curtosis"] = kurtosis([x for x in calculation_list if str(x) != 'nan'])
+                    if "skewness" in list_statistics:
+                        df.at[i,column+"_"+psico_column+"_skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])    
         return df
             
     def get_last_txt_download(self,directory):
