@@ -52,6 +52,9 @@ from selenium.webdriver.common.by import By
 import time
 import shutil
 
+import requests
+from bs4 import BeautifulSoup
+
 class NLPClass:
     def __init__(self):
         self.numero = 1
@@ -302,6 +305,31 @@ class NLPClass:
             print("translation.pkl no encontrado")
             df_translation = pd.DataFrame(columns=['word','translation','lan_src','lan_dest'])
         return df_translation
+    
+   
+    def read_pickle_synonyms_file(self,path):
+        '''
+        Read pickle file with the all synonyms DataFrame.
+
+        Parameters
+        ----------
+        path : string
+            Path where the picke file is.
+
+        Returns
+        -------
+        df_synonyms : pandas.DataFrame
+            df with all the synonyms obtained with the following structure:
+                word|synonym_0|synonym_1|synonym_2|...
+
+        '''
+        try:
+            df_synonyms = pd.read_pickle(path+"//synonyms.pkl")
+        except (OSError, IOError):
+            print("synonyms.pkl no encontrado")
+            return pd.DataFrame(columns=["word"])
+
+        return df_synonyms
         
     
     def translate(self, text, lan_src = 'spanish', lan_dest = 'english'):
@@ -1285,11 +1313,202 @@ class NLPClass:
             for psico_column in psycholinguistics_columns:
                 df[column+"_"+psico_column] = np.nan
                 df[column+"_"+psico_column] = df[column+"_"+psico_column].astype(object)
+                list_values = []
+
                 for i,row in df.iterrows():
-                        df.at[i,column+"_"+psico_column] = [next(iter(list(set(data[data["word"] == word][psico_column].values))), np.nan) for word in row[column]]
+                    list_values.append([])
+
+                    for words in row[column]:
+                        if len(words.split()) > 1:
+                            list_values_element = []
+                            for word in words.split():
+                                list_values_element.append(next(iter(list(set(data[data["word"] == word][psico_column].values))), np.nan))
+                            list_values[i].append(np.nanmean(list_values_element))
+                        else:
+                            list_values[i].append(next(iter(list(set(data[data["word"] == words][psico_column].values))), np.nan))
+                df[column+"_"+psico_column] = list_values
 
         return df
+    
+    
+    
+    def get_words_nan_psycholinguistics(self, data, psycholinguistics_columns, tokens_columns, df):
+        '''
+        It adds a new column for each psycholinguistics feature in psycholinguistics_columns 
+        where it asign to each row the corresponding psycholinguistic values to each token.
 
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            The DataFrame with one row for each different token with the 
+            corresponding psycholinguistic values. Obtained from https://www.bcbl.eu/databases/espal/
+        psycholinguistics_columns : List of column names
+            A list with the names of the columns in data with the 
+            psycholinguistic variables.
+        columnas_tokens : List of column names
+            A list with the names of df where the tokens are.
+        df : pandas.DataFrame
+            The DataFrame with the lists of tokens.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            The same DataFrame received but with as many columns more as length of
+            psycholinguistics_columns multiplied by length of tokens_columns.
+            
+        Example:
+        Parameters:
+            data:
+                word|log_frq|sa_num_phon|
+                perro|1.85108|4|
+                gato|1.59723|4|
+                caballo|1.92165|6|
+                papa|1.93218|4|
+                piso|1.55915|4|
+                pintura|1.65155|7|
+            psycholinguistics_columns:
+                ["log_frq","sa_num_phon"]
+            columnas_tokens:
+                ["fluency_p","fluency_animals"]
+            df:
+                codigo|diagnostico|fluency_p|fluency_animals|
+                001|AD|["papa","pintura"],["caballo","gato"]
+                002|CTR|["piso","pintura","papa"],["perro","gato"]
+            
+        Returns:
+            df:
+                codigo|diagnostico|fluency_p|fluency_animals|fluency_p_log_frq|fluency_p_sa_num_phon|fluency_animals_log_frq|fluency_animals_sa_num_phon|
+                001|AD|["papa","pintura"]|["caballo","gato"]|[1.93218,1.65155]|[4,7]|[1.92165,1.59723]|[6,4]
+                002|CTR|["piso","pintura","papa"]|["perro","gato"]|[1.55915,1.65155,1.93218]|[4,7,4]|[1.55915,1.65155,1.93218]|[4,7,4]
+        '''
+        palabras_nan = set()
+        for column in tokens_columns:
+                
+            for psico_column in psycholinguistics_columns:
+                df[column+"_"+psico_column] = np.nan
+                df[column+"_"+psico_column] = df[column+"_"+psico_column].astype(object)
+                list_values = []
+
+                for i,row in df.iterrows():
+                    list_values.append([])
+
+                    for words in row[column]:
+                        if len(words.split()) > 1:
+                            list_values_element = []
+                            for word in words.split():
+                                list_values_element.append(next(iter(list(set(data[data["word"] == word][psico_column].values))), np.nan))
+                                if str(list_values_element[-1]) == "nan":
+                                    palabras_nan.add(word)
+
+                            list_values[i].append(np.nanmean(list_values_element))
+                        else:
+                            list_values[i].append(next(iter(list(set(data[data["word"] == words][psico_column].values))), np.nan))
+                            if str(list_values[i][-1]) == "nan":
+                                palabras_nan.add(words)
+        return palabras_nan
+    
+    
+    def psycholinguistics_features_synonyms(self, data, psycholinguistics_columns, tokens_columns, df,path):
+        '''
+        It adds a new column for each psycholinguistics feature in psycholinguistics_columns 
+        where it asign to each row the corresponding psycholinguistic values to each token.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            The DataFrame with one row for each different token with the 
+            corresponding psycholinguistic values. Obtained from https://www.bcbl.eu/databases/espal/
+        psycholinguistics_columns : List of column names
+            A list with the names of the columns in data with the 
+            psycholinguistic variables.
+        columnas_tokens : List of column names
+            A list with the names of df where the tokens are.
+        df : pandas.DataFrame
+            The DataFrame with the lists of tokens.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            The same DataFrame received but with as many columns more as length of
+            psycholinguistics_columns multiplied by length of tokens_columns.
+            
+        Example:
+        Parameters:
+            data:
+                word|log_frq|sa_num_phon|
+                perro|1.85108|4|
+                gato|1.59723|4|
+                caballo|1.92165|6|
+                papa|1.93218|4|
+                piso|1.55915|4|
+                pintura|1.65155|7|
+            psycholinguistics_columns:
+                ["log_frq","sa_num_phon"]
+            columnas_tokens:
+                ["fluency_p","fluency_animals"]
+            df:
+                codigo|diagnostico|fluency_p|fluency_animals|
+                001|AD|["papa","pintura"],["caballo","gato"]
+                002|CTR|["piso","pintura","papa"],["perro","gato"]
+            
+        Returns:
+            df:
+                codigo|diagnostico|fluency_p|fluency_animals|fluency_p_log_frq|fluency_p_sa_num_phon|fluency_animals_log_frq|fluency_animals_sa_num_phon|
+                001|AD|["papa","pintura"]|["caballo","gato"]|[1.93218,1.65155]|[4,7]|[1.92165,1.59723]|[6,4]
+                002|CTR|["piso","pintura","papa"]|["perro","gato"]|[1.55915,1.65155,1.93218]|[4,7,4]|[1.55915,1.65155,1.93218]|[4,7,4]
+        '''
+        
+        df_synonyms = self.read_pickle_synonyms_file(path)
+        
+        for column in tokens_columns:
+                
+            for psico_column in psycholinguistics_columns:
+                df[column+"_"+psico_column] = np.nan
+                df[column+"_"+psico_column] = df[column+"_"+psico_column].astype(object)
+                list_values = []
+
+                for i,row in df.iterrows():
+                    list_values.append([])
+
+                    for words in row[column]:
+                        if len(words.split()) > 1:
+                            list_values_element = []
+                            for word in words.split():
+                                valor = next(iter(list(set(data[data["word"] == word][psico_column].values))), np.nan)
+                                if str(valor) == "nan":
+                                    df_fila = df_synonyms[df_synonyms["word"] == word]
+                                    if len(df_fila.index) == 0:
+                                        fila = self.get_synonyms(word)
+                                        df_fila = pd.DataFrame([[word]+fila],columns=["word"]+["synonym_"+str(i_syn) for i_syn in range(0,len(fila))])
+                                        df_synonyms = pd.concat([df_synonyms, df_fila], ignore_index=True)
+                                    contador = 1
+                                    fila = df_fila.values[0]
+                                    while (str(valor)=="nan") and (contador<len(fila)):
+                                        valor = next(iter(list(set(data[data["word"] == fila[contador]][psico_column].values))), np.nan)
+                                        contador+=1
+                                list_values_element.append(valor)
+                            list_values[i].append(np.nanmean(list_values_element))
+                        else:
+                            valor = next(iter(list(set(data[data["word"] == words][psico_column].values))), np.nan)
+                            if str(valor) == "nan":
+                                df_fila = df_synonyms[df_synonyms["word"] == words]
+                                if len(df_fila.index) == 0:
+                                    fila = self.get_synonyms(words)
+                                    df_fila = pd.DataFrame([[words]+fila],columns=["word"]+["synonym_"+str(i_syn) for i_syn in range(0,len(fila))])
+                                    df_synonyms = pd.concat([df_synonyms, df_fila], ignore_index=True)
+                                # fila = df_synonyms[df_synonyms["word"] == words].values[0]
+                                contador = 1
+                                fila = df_fila.values[0]
+
+                                while (str(valor)=="nan") and (contador<len(fila)):
+                                    if str(fila[contador]) != "nan":
+                                        valor = next(iter(list(set(data[data["word"] == fila[contador]][psico_column].values))), np.nan)
+                                    contador+=1
+                            list_values[i].append(valor)
+                df[column+"_"+psico_column] = list_values
+                df_synonyms.to_pickle(path+"//synonyms.pkl")
+
+        return df
 
     def psycholinguistics_features_optimized(self, data, psycholinguistics_columns, tokens_columns, df):
         # Crear un diccionario para buscar valores de psicolingüística por palabra
@@ -1536,3 +1755,21 @@ class NLPClass:
 
         # close the browser
         browser.quit()
+        
+    def get_synonyms(self, palabra):
+        url='https://www.wordreference.com/sinonimos/'
+        palabra = palabra.replace('\n','')
+        buscar=url+palabra
+        resp=requests.get(buscar)
+        bs=BeautifulSoup(resp.text,features="html.parser")
+        lista = bs.find(class_="trans esp clickable")
+        list_sinonimos = []
+        if not isinstance(lista,type(None)):
+            sinos=str(lista.find('li')).split(',')
+            if len(sinos) != 0:
+                for i_sino , sino in enumerate(sinos):
+                    sinonimo = sino.replace('<li>','').replace('</li>','')
+                    sinonimo = sinonimo.replace(" ", "")
+                    list_sinonimos.append(sinonimo)
+        return list_sinonimos
+            
