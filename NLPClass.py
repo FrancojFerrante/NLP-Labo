@@ -1460,6 +1460,8 @@ class NLPClass:
         
         df_synonyms = self.read_pickle_synonyms_file(path)
         
+        total_iteraciones = len(tokens_columns)*len(psycholinguistics_columns)
+        iteracion_print = 0
         for column in tokens_columns:
                 
             for psico_column in psycholinguistics_columns:
@@ -1467,7 +1469,8 @@ class NLPClass:
                 df[column+"_"+psico_column] = df[column+"_"+psico_column].astype(object)
                 list_values = []
 
-                for i,row in df.iterrows():
+                contador_fila = 0
+                for _,row in df.iterrows():
                     list_values.append([])
 
                     for words in row[column]:
@@ -1487,7 +1490,7 @@ class NLPClass:
                                         valor = next(iter(list(set(data[data["word"] == fila[contador]][psico_column].values))), np.nan)
                                         contador+=1
                                 list_values_element.append(valor)
-                            list_values[i].append(np.nanmean(list_values_element))
+                            list_values[contador_fila].append(np.nanmean(list_values_element))
                         else:
                             valor = next(iter(list(set(data[data["word"] == words][psico_column].values))), np.nan)
                             if str(valor) == "nan":
@@ -1504,9 +1507,13 @@ class NLPClass:
                                     if str(fila[contador]) != "nan":
                                         valor = next(iter(list(set(data[data["word"] == fila[contador]][psico_column].values))), np.nan)
                                     contador+=1
-                            list_values[i].append(valor)
+                            list_values[contador_fila].append(valor)
+                    contador_fila +=1
                 df[column+"_"+psico_column] = list_values
                 df_synonyms.to_pickle(path+"//synonyms.pkl")
+                
+                print("Iteracion " + str(iteracion_print) + " de " + str(total_iteraciones))
+                iteracion_print+=1
 
         return df
 
