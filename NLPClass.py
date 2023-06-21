@@ -55,6 +55,8 @@ import shutil
 import requests
 from bs4 import BeautifulSoup
 
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
 class NLPClass:
     def __init__(self):
         self.numero = 1
@@ -618,6 +620,8 @@ class NLPClass:
             ongoing_semantic_list.append(self.ongoing_semantic_variability(words))
 
         return ongoing_semantic_list
+    
+    
     
     def cross_semantic_distance(self,words_vector,concept_vector):
         """
@@ -1459,62 +1463,77 @@ class NLPClass:
         '''
         
         df_synonyms = self.read_pickle_synonyms_file(path)
-        
-        total_iteraciones = len(tokens_columns)*len(psycholinguistics_columns)
-        iteracion_print = 0
-        for column in tokens_columns:
-                
-            for psico_column in psycholinguistics_columns:
-                df[column+"_"+psico_column] = np.nan
-                df[column+"_"+psico_column] = df[column+"_"+psico_column].astype(object)
-                list_values = []
+        new_columns = []
 
-                contador_fila = 0
-                for _,row in df.iterrows():
+        for column in tokens_columns:
+            for psico_column in psycholinguistics_columns:
+                new_column_name = f"{column}_{psico_column}"
+                new_column_imputada_name = f"{new_column_name}_imputada"
+                new_columns.extend([new_column_name, new_column_imputada_name])
+
+                df[new_column_name] = np.nan
+                df[new_column_name] = df[new_column_name].astype(object)
+
+                df[new_column_imputada_name] = np.nan
+                df[new_column_imputada_name] = df[new_column_imputada_name].astype(object)
+
+                list_values_imputados = []
+                list_values = []
+                for _, row in df.iterrows():
+                    list_values_imputados.append([])
                     list_values.append([])
 
                     for words in row[column]:
                         if len(words.split()) > 1:
+                            list_values_element_imputados = []
                             list_values_element = []
+
                             for word in words.split():
-                                valor = next(iter(list(set(data[data["word"] == word][psico_column].values))), np.nan)
+                                valor = next(iter(set(data.loc[data["word"] == word, psico_column].values)), np.nan)
+                                list_values_element.append(valor)
+
                                 if str(valor) == "nan":
                                     df_fila = df_synonyms[df_synonyms["word"] == word]
-                                    if len(df_fila.index) == 0:
+                                    if df_fila.empty:
                                         fila = self.get_synonyms(word)
-                                        df_fila = pd.DataFrame([[word]+fila],columns=["word"]+["synonym_"+str(i_syn) for i_syn in range(0,len(fila))])
+                                        df_fila = pd.DataFrame(
+                                            [[word] + fila], columns=["word"] + ["synonym_" + str(i_syn) for i_syn in
+                                                                                    range(len(fila))])
                                         df_synonyms = pd.concat([df_synonyms, df_fila], ignore_index=True)
                                     contador = 1
                                     fila = df_fila.values[0]
-                                    while (str(valor)=="nan") and (contador<len(fila)):
-                                        valor = next(iter(list(set(data[data["word"] == fila[contador]][psico_column].values))), np.nan)
-                                        contador+=1
-                                list_values_element.append(valor)
-                            list_values[contador_fila].append(np.nanmean(list_values_element))
+                                    while str(valor) == "nan" and contador < len(fila):
+                                        valor = next(iter(set(data.loc[data["word"] == fila[contador], psico_column].values)), np.nan)
+                                        contador += 1
+                                list_values_element_imputados.append(valor)
+
+                            list_values_imputados[-1].append(np.nanmean(list_values_element_imputados))
+                            list_values[-1].append(np.nanmean(list_values_element))
+
                         else:
-                            valor = next(iter(list(set(data[data["word"] == words][psico_column].values))), np.nan)
+                            valor = next(iter(set(data.loc[data["word"] == words, psico_column].values)), np.nan)
+                            list_values[-1].append(valor)
+
                             if str(valor) == "nan":
                                 df_fila = df_synonyms[df_synonyms["word"] == words]
-                                if len(df_fila.index) == 0:
+                                if df_fila.empty:
                                     fila = self.get_synonyms(words)
-                                    df_fila = pd.DataFrame([[words]+fila],columns=["word"]+["synonym_"+str(i_syn) for i_syn in range(0,len(fila))])
+                                    df_fila = pd.DataFrame(
+                                        [[words] + fila], columns=["word"] + ["synonym_" + str(i_syn) for i_syn in
+                                                                                range(len(fila))])
                                     df_synonyms = pd.concat([df_synonyms, df_fila], ignore_index=True)
-                                # fila = df_synonyms[df_synonyms["word"] == words].values[0]
                                 contador = 1
                                 fila = df_fila.values[0]
+                                while str(valor) == "nan" and contador < len(fila):
+                                    if str(fila[contador]) == "nan":
+                                        valor = next(iter(set(data.loc[data["word"] == fila[contador], psico_column].values)), np.nan)
+                                    contador += 1
+                                list_values_imputados[-1].append(valor)
 
-                                while (str(valor)=="nan") and (contador<len(fila)):
-                                    if str(fila[contador]) != "nan":
-                                        valor = next(iter(list(set(data[data["word"] == fila[contador]][psico_column].values))), np.nan)
-                                    contador+=1
-                            list_values[contador_fila].append(valor)
-                    contador_fila +=1
-                df[column+"_"+psico_column] = list_values
-                df_synonyms.to_pickle(path+"//synonyms.pkl")
-                
-                print("Iteracion " + str(iteracion_print) + " de " + str(total_iteraciones))
-                iteracion_print+=1
+                df[new_column_imputada_name] = list_values_imputados
+                df[new_column_name] = list_values
 
+        df_synonyms.to_pickle(path + "//synonyms.pkl")
         return df
 
     def psycholinguistics_features_optimized(self, data, psycholinguistics_columns, tokens_columns, df):
@@ -1594,7 +1613,6 @@ class NLPClass:
         
             for i,row in df.iterrows():
                 for psico_column in psycholinguistics_columns:
-                    df.at[i,column+"_"+psico_column] = [i for i in row[column+"_"+psico_column] if i]
                     calculation_list = df.at[i,column+"_"+psico_column]
                     if "promedio" in list_statistics:
                         df.at[i,column+"_"+psico_column+"_promedio"] = np.nanmean(calculation_list)
@@ -1795,4 +1813,23 @@ class NLPClass:
                     sinonimo = sinonimo.replace(" ", "")
                     list_sinonimos.append(sinonimo)
         return list_sinonimos
+    
+    def load_hugging_translation_model_es_en(self,path):
+        cache_directory = path
+        model_name = "Helsinki-NLP/opus-mt-es-en"
+
+        self.translation_hugging_model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=cache_directory)
+        self.translation_hugging_tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_directory)
+    
+    def translate_hugging_es_en(self,text):
+        input_ids = self.translation_hugging_tokenizer.encode(text, return_tensors="pt")
+        outputs = self.translation_hugging_model.generate(input_ids)
+        translated_text = self.translation_hugging_tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return translated_text
+    
+    def translate_multiple_hugging_es_en(self, texts):
+        input_ids = self.translation_hugging_tokenizer.batch_encode_plus(texts, return_tensors="pt", padding=True)["input_ids"]
+        outputs = self.translation_hugging_model.generate(input_ids)
+        translated_texts = self.translation_hugging_tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        return translated_texts
             
