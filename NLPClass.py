@@ -56,6 +56,9 @@ import requests
 from bs4 import BeautifulSoup
 
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+import torch
+import fasttext
+import fasttext.util
 
 class NLPClass:
     def __init__(self):
@@ -670,6 +673,23 @@ class NLPClass:
         """
         self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
         return self.fasttext
+    
+    def reduce_fasttext_model(self,path_fast_text):
+        """
+        Loads a pre-trained FastText model from disk and sets it as the model to be used by the instance of the class.
+        
+        Parameters:
+            path_fast_text (str): The path to the directory where the FastText model binary file is saved.
+            
+        Returns:
+            The FastText model object that was loaded from disk.
+        """
+        
+        fasttext.util.reduce_model(self.fasttext, 100)
+        self.fasttext_100 = fasttext
+        self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
+
+        return self.fasttext_100
     
     def get_word_fast_text_vector(self,vector_words):
         """
@@ -1495,7 +1515,7 @@ class NLPClass:
                                 if str(valor) == "nan":
                                     df_fila = df_synonyms[df_synonyms["word"] == word]
                                     if df_fila.empty:
-                                        fila = self.get_synonyms(word)
+                                        fila = self.get_synonyms_fasttext(word)
                                         df_fila = pd.DataFrame(
                                             [[word] + fila], columns=["word"] + ["synonym_" + str(i_syn) for i_syn in
                                                                                     range(len(fila))])
@@ -1797,7 +1817,15 @@ class NLPClass:
         # close the browser
         browser.quit()
         
-    def get_synonyms(self, palabra):
+        
+    def get_synonyms_fasttext(self, palabra):
+        
+        synonyms = self.fasttext_100.get_nearest_neighbors(palabra, k=20)
+        synonyms = [tupla[1] for tupla in synonyms]
+        return synonyms
+        
+
+    def get_synonyms_wordreference(self, palabra):
         url='https://www.wordreference.com/sinonimos/'
         palabra = palabra.replace('\n','')
         buscar=url+palabra
@@ -1817,9 +1845,12 @@ class NLPClass:
     def load_hugging_translation_model_es_en(self,path):
         cache_directory = path
         model_name = "Helsinki-NLP/opus-mt-es-en"
-
+    
         self.translation_hugging_model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=cache_directory)
         self.translation_hugging_tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_directory)
+    
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.translation_hugging_model.to(self.device)
     
     def translate_hugging_es_en(self,text):
         input_ids = self.translation_hugging_tokenizer.encode(text, return_tensors="pt")
@@ -1829,7 +1860,68 @@ class NLPClass:
     
     def translate_multiple_hugging_es_en(self, texts):
         input_ids = self.translation_hugging_tokenizer.batch_encode_plus(texts, return_tensors="pt", padding=True)["input_ids"]
-        outputs = self.translation_hugging_model.generate(input_ids)
+        input_ids = input_ids.to(self.device)  # Move the input_ids tensor to the same device as the model
+    
+        outputs = self.translation_hugging_model.generate(input_ids,max_new_tokens=512)
         translated_texts = self.translation_hugging_tokenizer.batch_decode(outputs, skip_special_tokens=True)
         return translated_texts
+    
+    def custom_sent_tokenize(self, text):
+        # Divide el texto por puntos
+        sentences_by_period = [sentence.strip() for sentence in text.split('.')]
+    
+        # Divide cada oración por saltos de línea
+        sentences = []
+        for sentence in sentences_by_period:
+            sentences.extend(sentence.split('\n'))
+
+        return sentences
+    
+    def concatenar_por_numero(self, textos, numeros):
+        # Creamos un diccionario para agrupar los textos por número
+        grupos = {}
+        for texto, numero in zip(textos, numeros):
+            if numero not in grupos:
+                grupos[numero] = []
+            grupos[numero].append(texto)
+    
+        # Concatenamos los textos de cada grupo separados por espacio
+        textos_concatenados = []
+        for numero in np.unique(numeros):
+            textos_grupo = grupos[numero]
+            texto_concatenado = ' '.join(textos_grupo)
+            textos_concatenados.append(texto_concatenado)
+    
+        return textos_concatenados
+    
+    def translate_text(self,texts):
+
+        texts_less_limit = []
+        print("Numero de textos: " + str(len(texts)))
+        sentence_id = []
+        for i_text,text in enumerate(texts):
+            # Dividir el texto en oraciones utilizando NLTK
+            sentences = self.custom_sent_tokenize(text)
+
+            for i_sentence, sentence in enumerate(sentences):
+
+                # Verificar si la oración supera el límite de tokens
+                if len(sentence.split()) > 256:
+                    # Dividir la oración en segmentos más pequeños
+                    segments = [sentence[i:i + 256] for i in range(0, len(sentence), 256)]
+
+                    texts_less_limit = texts_less_limit + segments
+                    sentence_id = sentence_id + ([i_text]*len(segments))
+                else:
+                    texts_less_limit.append(sentence)
+                    sentence_id.append(i_text)
+
+        # Traducir cada segmento individualmente
+        translated_segments = self.translate_multiple_hugging_es_en(texts_less_limit)
+
+        translated_segments_concatenated = self.concatenar_por_numero(translated_segments,sentence_id)
+        # Concatenar los segmentos traducidos en una sola respuesta
+        # translated_sentence = ' '.join(translated_segments)
+
+        return translated_segments_concatenated
             
