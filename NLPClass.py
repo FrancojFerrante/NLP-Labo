@@ -60,10 +60,13 @@ import torch
 import fasttext
 import fasttext.util
 
+
 class NLPClass:
     def __init__(self):
         self.numero = 1
         nltk.download('wordnet')
+        self.lemmatizer = WordNetLemmatizer()
+
     def translations_dictionary(self, df_translate=None, path=""):
         '''
         It appends to a dictionary different animals names in spanish and
@@ -330,6 +333,31 @@ class NLPClass:
         '''
         try:
             df_synonyms = pd.read_pickle(path+"//synonyms.pkl")
+        except (OSError, IOError):
+            print("synonyms.pkl no encontrado")
+            return pd.DataFrame(columns=["word"])
+
+        return df_synonyms
+    
+    
+    def read_pickle_synonyms_file_fasttext(self,path):
+        '''
+        Read pickle file with the all synonyms DataFrame.
+
+        Parameters
+        ----------
+        path : string
+            Path where the picke file is.
+
+        Returns
+        -------
+        df_synonyms : pandas.DataFrame
+            df with all the synonyms obtained with the following structure:
+                word|synonym_0|synonym_1|synonym_2|...
+
+        '''
+        try:
+            df_synonyms = pd.read_pickle(path+"//synonyms_fasttext.pkl")
         except (OSError, IOError):
             print("synonyms.pkl no encontrado")
             return pd.DataFrame(columns=["word"])
@@ -686,7 +714,7 @@ class NLPClass:
         """
         
         fasttext.util.reduce_model(self.fasttext, 100)
-        self.fasttext_100 = fasttext
+        self.fasttext_100 = self.fasttext
         self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
 
         return self.fasttext_100
@@ -1482,13 +1510,14 @@ class NLPClass:
                 002|CTR|["piso","pintura","papa"]|["perro","gato"]|[1.55915,1.65155,1.93218]|[4,7,4]|[1.55915,1.65155,1.93218]|[4,7,4]
         '''
         
-        df_synonyms = self.read_pickle_synonyms_file(path)
+        df_synonyms = self.read_pickle_synonyms_file_fasttext(path)
         new_columns = []
 
         for column in tokens_columns:
             for psico_column in psycholinguistics_columns:
                 new_column_name = f"{column}_{psico_column}"
                 new_column_imputada_name = f"{new_column_name}_imputada"
+
                 new_columns.extend([new_column_name, new_column_imputada_name])
 
                 df[new_column_name] = np.nan
@@ -1496,10 +1525,15 @@ class NLPClass:
 
                 df[new_column_imputada_name] = np.nan
                 df[new_column_imputada_name] = df[new_column_imputada_name].astype(object)
+                
+                # df[new_column_imputada_lemma_name] = np.nan
+                # df[new_column_imputada_lemma_name] = df[new_column_imputada_lemma_name].astype(object)
 
+                # list_values_imputados_lemma = []
                 list_values_imputados = []
                 list_values = []
                 for _, row in df.iterrows():
+                    # list_values_imputados_lemma.append([])
                     list_values_imputados.append([])
                     list_values.append([])
 
@@ -1525,6 +1559,7 @@ class NLPClass:
                                     while str(valor) == "nan" and contador < len(fila):
                                         valor = next(iter(set(data.loc[data["word"] == fila[contador], psico_column].values)), np.nan)
                                         contador += 1
+
                                 list_values_element_imputados.append(valor)
 
                             list_values_imputados[-1].append(np.nanmean(list_values_element_imputados))
@@ -1537,7 +1572,7 @@ class NLPClass:
                             if str(valor) == "nan":
                                 df_fila = df_synonyms[df_synonyms["word"] == words]
                                 if df_fila.empty:
-                                    fila = self.get_synonyms(words)
+                                    fila = self.get_synonyms_fasttext(words)
                                     df_fila = pd.DataFrame(
                                         [[words] + fila], columns=["word"] + ["synonym_" + str(i_syn) for i_syn in
                                                                                 range(len(fila))])
@@ -1545,15 +1580,15 @@ class NLPClass:
                                 contador = 1
                                 fila = df_fila.values[0]
                                 while str(valor) == "nan" and contador < len(fila):
-                                    if str(fila[contador]) == "nan":
+                                    if str(fila[contador]) != "nan":
                                         valor = next(iter(set(data.loc[data["word"] == fila[contador], psico_column].values)), np.nan)
                                     contador += 1
-                                list_values_imputados[-1].append(valor)
+                            list_values_imputados[-1].append(valor)
 
                 df[new_column_imputada_name] = list_values_imputados
                 df[new_column_name] = list_values
 
-        df_synonyms.to_pickle(path + "//synonyms.pkl")
+        df_synonyms.to_pickle(path+"//synonyms_fasttext.pkl")
         return df
 
     def psycholinguistics_features_optimized(self, data, psycholinguistics_columns, tokens_columns, df):
@@ -1850,7 +1885,8 @@ class NLPClass:
         self.translation_hugging_tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_directory)
     
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.translation_hugging_model.to(self.device)
+        if torch.cuda.is_available():
+            self.translation_hugging_model.to(self.device)
     
     def translate_hugging_es_en(self,text):
         input_ids = self.translation_hugging_tokenizer.encode(text, return_tensors="pt")
@@ -1858,14 +1894,38 @@ class NLPClass:
         translated_text = self.translation_hugging_tokenizer.decode(outputs[0], skip_special_tokens=True)
         return translated_text
     
-    def translate_multiple_hugging_es_en(self, texts):
+    def translate_multiple_hugging_es_en(self, texts):        
+        max_new_tokens = 512
+        batch_division_factor = 1
+        
         input_ids = self.translation_hugging_tokenizer.batch_encode_plus(texts, return_tensors="pt", padding=True)["input_ids"]
-        input_ids = input_ids.to(self.device)  # Move the input_ids tensor to the same device as the model
-    
-        outputs = self.translation_hugging_model.generate(input_ids,max_new_tokens=512)
-        translated_texts = self.translation_hugging_tokenizer.batch_decode(outputs, skip_special_tokens=True)
-        return translated_texts
-    
+        
+        if torch.cuda.is_available():
+            input_ids = input_ids.to(self.device)
+        
+        batch_size = len(input_ids)
+        
+        while True:
+            try:
+                batch_size_divided = batch_size//batch_division_factor
+                if batch_size < 1:
+                    break
+
+                input_ids_batches = input_ids.split(batch_size_divided)
+                combined_outputs = []
+                for batch in input_ids_batches:
+                    batch_outputs = self.translation_hugging_model.generate(batch, max_new_tokens=max_new_tokens)
+                    combined_outputs.append(batch_outputs)
+                
+                outputs = torch.cat(combined_outputs, dim=1)
+                translated_texts = self.translation_hugging_tokenizer.batch_decode(outputs, skip_special_tokens=True)
+
+                return translated_texts
+        
+            except RuntimeError:
+        
+                batch_division_factor = batch_division_factor*2
+                
     def custom_sent_tokenize(self, text):
         # Divide el texto por puntos
         sentences_by_period = [sentence.strip() for sentence in text.split('.')]
@@ -1903,6 +1963,7 @@ class NLPClass:
             # Dividir el texto en oraciones utilizando NLTK
             sentences = self.custom_sent_tokenize(text)
 
+            sentences = [sentence for sentence in sentences if sentence!=""]
             for i_sentence, sentence in enumerate(sentences):
 
                 # Verificar si la oración supera el límite de tokens
