@@ -702,7 +702,7 @@ class NLPClass:
         self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
         return self.fasttext
     
-    def reduce_fasttext_model(self,path_fast_text):
+    def reduce_fasttext_model(self,path_fast_text,size):
         """
         Loads a pre-trained FastText model from disk and sets it as the model to be used by the instance of the class.
         
@@ -713,11 +713,69 @@ class NLPClass:
             The FastText model object that was loaded from disk.
         """
         
-        fasttext.util.reduce_model(self.fasttext, 100)
-        self.fasttext_100 = self.fasttext
+        fasttext.util.reduce_model(self.fasttext, size)
+        self.fasttext_reduced = self.fasttext
         self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
 
-        return self.fasttext_100
+        return self.fasttext_reduced
+    
+    def get_word_fast_text_vector_reduced(self,vector_words):
+        """
+        Returns the word embedding for the given list of words.
+    
+        Args:
+            vector_words (list): A list of words. Each word can be a single string or a list of strings.
+            
+        Returns:
+            list: A list of lists of word embeddings. The outer list has the same length as `vector_words`, and
+                each inner list contains the word embeddings for the corresponding element in `vector_words`.
+                
+        Raises:
+            ValueError: If the fastText model has not been loaded.
+
+        """
+        words_vector = list()
+        for i_lista,word_list in enumerate(vector_words):
+            words_vector.append([])
+            for i_word,word in enumerate(word_list):
+                words_vector[i_lista].append(self.fasttext_reduced.get_word_vector(word))
+                
+        return words_vector
+    
+    def ongoing_semantic_variability_complete_fasttext_size(self, vector_words):
+        """
+        Given a list of strings list, it calculates the ongoing semantic 
+        variability for each element as defined at (Sanz et al. 2021)
+
+        Parameters
+        ----------
+        vector_words : list of strings list
+            A list where each element has a list of words.
+
+        Returns
+        -------
+        ongoing_semantic_list : float list
+            A list where each float element represents the ongoing semantic
+            variability.
+
+        """
+
+        
+        # I obtain the fasttext vector for each word for each patient.
+        words_vector = self.get_word_fast_text_vector_reduced(vector_words)
+        
+        
+        # I calculate the semantic distance between each contiguous word (vector) spoken by each patient.
+        words_distances = self.ongoing_semantic_distance(words_vector)
+
+                
+        # I calculate the Ongoing Semantic Variability of each patient.
+            
+        ongoing_semantic_list = list()
+        for words in words_distances:
+            ongoing_semantic_list.append(self.ongoing_semantic_variability(words))
+
+        return ongoing_semantic_list
     
     def get_word_fast_text_vector(self,vector_words):
         """
