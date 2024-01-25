@@ -1913,7 +1913,7 @@ class NLPClass:
         
     def get_synonyms_fasttext(self, palabra):
         
-        synonyms = self.fasttext_100.get_nearest_neighbors(palabra, k=20)
+        synonyms = self.fasttext_reduced.get_nearest_neighbors(palabra, k=20)
         synonyms = [tupla[1] for tupla in synonyms]
         return synonyms
         
