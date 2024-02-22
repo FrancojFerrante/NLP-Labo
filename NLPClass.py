@@ -699,7 +699,7 @@ class NLPClass:
         Returns:
             The FastText model object that was loaded from disk.
         """
-        self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
+        self.fasttext = fasttext.load_model(path_fast_text)
         return self.fasttext
     
     def reduce_fasttext_model(self,path_fast_text,size):
@@ -777,6 +777,13 @@ class NLPClass:
 
         return ongoing_semantic_list
     
+    def delete_all_zeros_vectores(self,vector_words):
+        vector_words_filtrado = []
+        for words in vector_words:
+            lista_filtrada = [sublista for sublista in words if any(elemento != 0 for elemento in sublista)]
+            vector_words_filtrado.append(lista_filtrada)
+        return vector_words_filtrado
+    
     def get_word_fast_text_vector(self,vector_words):
         """
         Returns the word embedding for the given list of words.
@@ -849,9 +856,10 @@ class NLPClass:
         # I obtain the fasttext vector for each word for each patient.
         words_vector = self.get_word_fast_text_vector(vector_words)
         
+        words_vector_filtered = self.delete_all_zeros_vectores(words_vector)
         
         # I calculate the semantic distance between each contiguous word (vector) spoken by each patient.
-        words_distances = self.ongoing_semantic_distance(words_vector)
+        words_distances = self.ongoing_semantic_distance(words_vector_filtered)
 
                 
         # I calculate the Ongoing Semantic Variability of each patient.
@@ -1945,6 +1953,17 @@ class NLPClass:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if torch.cuda.is_available():
             self.translation_hugging_model.to(self.device)
+            
+    def load_hugging_translation_model_chino_english(self,path):
+        cache_directory = path
+        model_name = "Helsinki-NLP/opus-mt-zh-en"
+    
+        self.translation_hugging_model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=cache_directory)
+        self.translation_hugging_tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_directory)
+    
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available():
+            self.translation_hugging_model.to(self.device)
     
     def translate_hugging_es_en(self,text):
         input_ids = self.translation_hugging_tokenizer.encode(text, return_tensors="pt")
@@ -2014,33 +2033,47 @@ class NLPClass:
     
     def translate_text(self,texts):
 
-        texts_less_limit = []
         print("Numero de textos: " + str(len(texts)))
-        sentence_id = []
+        translated_segments_concatenated = []
         for i_text,text in enumerate(texts):
+            texts_less_limit = []
             # Dividir el texto en oraciones utilizando NLTK
             sentences = self.custom_sent_tokenize(text)
 
             sentences = [sentence for sentence in sentences if sentence!=""]
             for i_sentence, sentence in enumerate(sentences):
+                
+                sentence_split = sentence.split()
+                sentence_split = [i for i in sentence_split if len(i) <= 100]
 
                 # Verificar si la oración supera el límite de tokens
-                if len(sentence.split()) > 256:
-                    # Dividir la oración en segmentos más pequeños
-                    segments = [sentence[i:i + 256] for i in range(0, len(sentence), 256)]
+                if len(sentence_split)!=0:
+                    if len(sentence_split) > 256:
+                        # Dividir la oración en segmentos más pequeños
+                        segments = [sentence[i:i + 256] for i in range(0, len(sentence), 256)]
+    
+                        texts_less_limit = texts_less_limit + segments
+                    else:
+                        texts_less_limit.append(" ".join(sentence_split))
 
-                    texts_less_limit = texts_less_limit + segments
-                    sentence_id = sentence_id + ([i_text]*len(segments))
-                else:
-                    texts_less_limit.append(sentence)
-                    sentence_id.append(i_text)
+            # Traducir cada segmento individualmente
+            translated_segments = self.translate_multiple_hugging_es_en(texts_less_limit)
+            
+            translated_sentence = ' '.join(translated_segments)
 
-        # Traducir cada segmento individualmente
-        translated_segments = self.translate_multiple_hugging_es_en(texts_less_limit)
-
-        translated_segments_concatenated = self.concatenar_por_numero(translated_segments,sentence_id)
-        # Concatenar los segmentos traducidos en una sola respuesta
-        # translated_sentence = ' '.join(translated_segments)
+            translated_segments_concatenated.append(translated_sentence)
+            # Concatenar los segmentos traducidos en una sola respuesta
 
         return translated_segments_concatenated
+    
+    def translate_text_chinese_english(self,texts):
+
+        translations = []
+        
+        for text in texts:
+            tokenized_text = self.translation_hugging_tokenizer.prepare_seq2seq_batch([text], return_tensors='pt')
+            translation = self.translation_hugging_model.generate(**tokenized_text)
+            translated_text = self.translation_hugging_tokenizer.batch_decode(translation, skip_special_tokens=False)[0]
+            translations.append(translated_text)
+        return translations
             
