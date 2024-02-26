@@ -715,7 +715,7 @@ class NLPClass:
         
         fasttext.util.reduce_model(self.fasttext, size)
         self.fasttext_reduced = self.fasttext
-        self.fasttext = fasttext.load_model(path_fast_text+'//cc.es.300.bin')
+        self.fasttext = fasttext.load_model(path_fast_text)
 
         return self.fasttext_reduced
     
