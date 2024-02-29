@@ -287,9 +287,9 @@ class NLPClass:
                 df_translation.loc[df_length] = new_row
                 
             if traducidas%50 == 0:
-                df_translation.to_pickle(path+"//translations.pkl")
+                df_translation.to_pickle(path)
                 
-        df_translation.to_pickle(path+"//translations.pkl")
+        df_translation.to_pickle(path)
     
     def read_pickle_translation_file(self,path):
         '''
@@ -308,7 +308,7 @@ class NLPClass:
 
         '''
         try:
-            df_translation = pd.read_pickle(path+"//translations.pkl")
+            df_translation = pd.read_pickle(path)
         except (OSError, IOError):
             print("translation.pkl no encontrado")
             df_translation = pd.DataFrame(columns=['word','translation','lan_src','lan_dest'])
@@ -853,17 +853,20 @@ class NLPClass:
 
         """
 
+        print("OSV: Calculating osv")
+        print("OSV: Getting osv vectors")
         # I obtain the fasttext vector for each word for each patient.
         words_vector = self.get_word_fast_text_vector(vector_words)
         
         words_vector_filtered = self.delete_all_zeros_vectores(words_vector)
         
+        print("OSV: Calculating distances")
         # I calculate the semantic distance between each contiguous word (vector) spoken by each patient.
         words_distances = self.ongoing_semantic_distance(words_vector_filtered)
 
                 
         # I calculate the Ongoing Semantic Variability of each patient.
-            
+        print("OSV: Calculating SV")
         ongoing_semantic_list = list()
         for words in words_distances:
             ongoing_semantic_list.append(self.ongoing_semantic_variability(words))
@@ -1579,8 +1582,10 @@ class NLPClass:
         df_synonyms = self.read_pickle_synonyms_file_fasttext(path)
         new_columns = []
 
-        for column in tokens_columns:
-            for psico_column in psycholinguistics_columns:
+        for i_column, column in enumerate(tokens_columns):
+            print(str(i_column) + " de " + str(len(tokens_columns)) + ": " + str(column))
+            for i_psico_column,psico_column in enumerate(psycholinguistics_columns):
+                print(str(i_psico_column) + " de " + str(len(psycholinguistics_columns)) + ": " + str(psico_column))
                 new_column_name = f"{column}_{psico_column}"
                 new_column_imputada_name = f"{new_column_name}_imputada"
 
@@ -1598,7 +1603,10 @@ class NLPClass:
                 # list_values_imputados_lemma = []
                 list_values_imputados = []
                 list_values = []
-                for _, row in df.iterrows():
+                for i_row, row in df.iterrows():
+                    if ((i_row%10) == 0):
+                        print(str(i_row) + " de " + str(len(df)))
+
                     # list_values_imputados_lemma.append([])
                     list_values_imputados.append([])
                     list_values.append([])
