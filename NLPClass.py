@@ -1529,7 +1529,7 @@ class NLPClass:
         return palabras_nan
     
     
-    def psycholinguistics_features_synonyms(self, data, psycholinguistics_columns, tokens_columns, df,path):
+    def psycholinguistics_features_synonyms(self, data, psycholinguistics_columns,tokens_columns, df,path, imputed_columns=None):
         '''
         It adds a new column for each psycholinguistics feature in psycholinguistics_columns 
         where it asign to each row the corresponding psycholinguistic values to each token.
@@ -1620,19 +1620,20 @@ class NLPClass:
                                 valor = next(iter(set(data.loc[data["word"] == word, psico_column].values)), np.nan)
                                 list_values_element.append(valor)
 
-                                if str(valor) == "nan":
-                                    df_fila = df_synonyms[df_synonyms["word"] == word]
-                                    if df_fila.empty:
-                                        fila = self.get_synonyms_fasttext(word)
-                                        df_fila = pd.DataFrame(
-                                            [[word] + fila], columns=["word"] + ["synonym_" + str(i_syn) for i_syn in
-                                                                                    range(len(fila))])
-                                        df_synonyms = pd.concat([df_synonyms, df_fila], ignore_index=True)
-                                    contador = 1
-                                    fila = df_fila.values[0]
-                                    while str(valor) == "nan" and contador < len(fila):
-                                        valor = next(iter(set(data.loc[data["word"] == fila[contador], psico_column].values)), np.nan)
-                                        contador += 1
+                                if (column is None) or (column in imputed_columns):
+                                    if str(valor) == "nan":
+                                        df_fila = df_synonyms[df_synonyms["word"] == word]
+                                        if df_fila.empty:
+                                            fila = self.get_synonyms_fasttext(word)
+                                            df_fila = pd.DataFrame(
+                                                [[word] + fila], columns=["word"] + ["synonym_" + str(i_syn) for i_syn in
+                                                                                        range(len(fila))])
+                                            df_synonyms = pd.concat([df_synonyms, df_fila], ignore_index=True)
+                                        contador = 1
+                                        fila = df_fila.values[0]
+                                        while str(valor) == "nan" and contador < len(fila):
+                                            valor = next(iter(set(data.loc[data["word"] == fila[contador], psico_column].values)), np.nan)
+                                            contador += 1
 
                                 list_values_element_imputados.append(valor)
 
