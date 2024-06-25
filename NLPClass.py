@@ -1612,35 +1612,35 @@ class NLPClass:
                     list_values.append([])
 
                     for words in row[column]:
-                        if len(words.split()) > 1:
-                            list_values_element_imputados = []
-                            list_values_element = []
+                        # if len(words.split()) > 1:
+                        #     list_values_element_imputados = []
+                        #     list_values_element = []
 
-                            for word in words.split():
-                                valor = next(iter(set(data.loc[data["word"] == word, psico_column].values)), np.nan)
-                                list_values_element.append(valor)
+                        #     for word in words.split():
+                        #         valor = next(iter(set(data.loc[data["word"] == word, psico_column].values)), np.nan)
+                        #         list_values_element.append(valor)
 
-                                if (column is None) or (column in imputed_columns):
-                                    if str(valor) == "nan":
-                                        df_fila = df_synonyms[df_synonyms["word"] == word]
-                                        if df_fila.empty:
-                                            fila = self.get_synonyms_fasttext(word)
-                                            df_fila = pd.DataFrame(
-                                                [[word] + fila], columns=["word"] + ["synonym_" + str(i_syn) for i_syn in
-                                                                                        range(len(fila))])
-                                            df_synonyms = pd.concat([df_synonyms, df_fila], ignore_index=True)
-                                        contador = 1
-                                        fila = df_fila.values[0]
-                                        while str(valor) == "nan" and contador < len(fila):
-                                            valor = next(iter(set(data.loc[data["word"] == fila[contador], psico_column].values)), np.nan)
-                                            contador += 1
+                        #         if (column is None) or (column in imputed_columns):
+                        #             if str(valor) == "nan":
+                        #                 df_fila = df_synonyms[df_synonyms["word"] == word]
+                        #                 if df_fila.empty:
+                        #                     fila = self.get_synonyms_fasttext(word)
+                        #                     df_fila = pd.DataFrame(
+                        #                         [[word] + fila], columns=["word"] + ["synonym_" + str(i_syn) for i_syn in
+                        #                                                                 range(len(fila))])
+                        #                     df_synonyms = pd.concat([df_synonyms, df_fila], ignore_index=True)
+                        #                 contador = 1
+                        #                 fila = df_fila.values[0]
+                        #                 while str(valor) == "nan" and contador < len(fila):
+                        #                     valor = next(iter(set(data.loc[data["word"] == fila[contador], psico_column].values)), np.nan)
+                        #                     contador += 1
 
-                                list_values_element_imputados.append(valor)
+                        #         list_values_element_imputados.append(valor)
 
-                            list_values_imputados[-1].append(np.nanmean(list_values_element_imputados))
-                            list_values[-1].append(np.nanmean(list_values_element))
+                        #     list_values_imputados[-1].append(np.nanmean(list_values_element_imputados))
+                        #     list_values[-1].append(np.nanmean(list_values_element))
 
-                        else:
+                        # else:
                             valor = next(iter(set(data.loc[data["word"] == words, psico_column].values)), np.nan)
                             list_values[-1].append(valor)
 
@@ -1723,47 +1723,66 @@ class NLPClass:
             by the 7 stadistics values (promedio, minimo, maximo, std, mediana, curtosis y skewness.
 
         '''
+        # Inicializa las nuevas columnas
         for column in tokens_columns:
-            for psico_column in psycholinguistics_columns:    
+            for psico_column in psycholinguistics_columns:
                 if "promedio" in list_statistics:
-                    df[column+"_"+psico_column+"_promedio"] = np.nan
+                    df[column + "_" + psico_column + "_promedio"] = np.nan
                 if "minimo" in list_statistics:
-                    df[column+"_"+psico_column+"_minimo"] = np.nan
+                    df[column + "_" + psico_column + "_minimo"] = np.nan
                 if "maximo" in list_statistics:
-                    df[column+"_"+psico_column+"_maximo"] = np.nan
+                    df[column + "_" + psico_column + "_maximo"] = np.nan
                 if "std" in list_statistics:
-                    df[column+"_"+psico_column+"_std"] = np.nan
+                    df[column + "_" + psico_column + "_std"] = np.nan
                 if "mediana" in list_statistics:
-                    df[column+"_"+psico_column+"_mediana"] = np.nan
+                    df[column + "_" + psico_column + "_mediana"] = np.nan
                 if "curtosis" in list_statistics:
-                    df[column+"_"+psico_column+"_curtosis"] = np.nan
+                    df[column + "_" + psico_column + "_curtosis"] = np.nan
                 if "skewness" in list_statistics:
-                    df[column+"_"+psico_column+"_skewness"] = np.nan
+                    df[column + "_" + psico_column + "_skewness"] = np.nan
         
+        # Función para calcular estadísticas
+        def calcular_estadisticas(row, column, psico_column):
+            calculation_list = row[column + "_" + psico_column]
+            stats = {}
+            
+            if "promedio" in list_statistics:
+                stats["promedio"] = np.nanmean(calculation_list)
+            if "minimo" in list_statistics:
+                stats["minimo"] = np.nan if len(calculation_list) == 0 else np.nanmin(calculation_list)
+            if "maximo" in list_statistics:
+                stats["maximo"] = np.nan if len(calculation_list) == 0 else np.nanmax(calculation_list)
+            if "std" in list_statistics:
+                stats["std"] = np.nanstd(calculation_list)
+            if "mediana" in list_statistics:
+                stats["mediana"] = np.nanmedian(calculation_list)
+            if "curtosis" in list_statistics:
+                stats["curtosis"] = kurtosis([x for x in calculation_list if str(x) != 'nan'])
+            if "skewness" in list_statistics:
+                stats["skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])
+                
+            return stats
         
-            for i,row in df.iterrows():
-                for psico_column in psycholinguistics_columns:
-                    calculation_list = df.at[i,column+"_"+psico_column]
-                    if "promedio" in list_statistics:
-                        df.at[i,column+"_"+psico_column+"_promedio"] = np.nanmean(calculation_list)
-                    if (len(calculation_list)==0):
-                        if "minimo" in list_statistics:
-                            df.at[i,column+"_"+psico_column+"_minimo"] = np.nan
-                        if "maximo" in list_statistics:
-                            df.at[i,column+"_"+psico_column+"_maximo"] = np.nan
-                    else:
-                        if "minimo" in list_statistics:
-                            df.at[i,column+"_"+psico_column+"_minimo"] = np.nanmin(calculation_list)
-                        if "maximo" in list_statistics:
-                            df.at[i,column+"_"+psico_column+"_maximo"] = np.nanmax(calculation_list)
-                    if "std" in list_statistics:
-                        df.at[i,column+"_"+psico_column+"_std"] = np.nanstd(calculation_list)
-                    if "mediana" in list_statistics:
-                        df.at[i,column+"_"+psico_column+"_mediana"] = np.nanmedian(calculation_list)
-                    if "curtosis" in list_statistics:
-                        df.at[i,column+"_"+psico_column+"_curtosis"] = kurtosis([x for x in calculation_list if str(x) != 'nan'])
-                    if "skewness" in list_statistics:
-                        df.at[i,column+"_"+psico_column+"_skewness"] = skew([x for x in calculation_list if str(x) != 'nan'])    
+        # Aplicar la función a cada fila
+        for column in tokens_columns:
+            for psico_column in psycholinguistics_columns:
+                stats = df.apply(lambda row: calcular_estadisticas(row, column, psico_column), axis=1)
+                
+                if "promedio" in list_statistics:
+                    df[column + "_" + psico_column + "_promedio"] = stats.apply(lambda x: x["promedio"])
+                if "minimo" in list_statistics:
+                    df[column + "_" + psico_column + "_minimo"] = stats.apply(lambda x: x["minimo"])
+                if "maximo" in list_statistics:
+                    df[column + "_" + psico_column + "_maximo"] = stats.apply(lambda x: x["maximo"])
+                if "std" in list_statistics:
+                    df[column + "_" + psico_column + "_std"] = stats.apply(lambda x: x["std"])
+                if "mediana" in list_statistics:
+                    df[column + "_" + psico_column + "_mediana"] = stats.apply(lambda x: x["mediana"])
+                if "curtosis" in list_statistics:
+                    df[column + "_" + psico_column + "_curtosis"] = stats.apply(lambda x: x["curtosis"])
+                if "skewness" in list_statistics:
+                    df[column + "_" + psico_column + "_skewness"] = stats.apply(lambda x: x["skewness"])
+
         return df
             
     def get_last_txt_download(self,directory):
