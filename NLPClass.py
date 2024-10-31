@@ -1046,7 +1046,7 @@ class NLPClass:
         noun_counter=0
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if((row[1]=="NN") | (row[1]=="NNS")):
+                if((row[1]=="noun") | (row[1]=="noun")):
                     noun_counter+=1
         elif language == "spanish":
             for i,row in df_tagged.iterrows():
@@ -1068,7 +1068,7 @@ class NLPClass:
         """
         verb_counter=0
         for i,row in df_tagged.iterrows():
-            if(str(row[1]).startswith("V")):
+            if(row[1] == "verb"):
                 verb_counter+=1
         return verb_counter/(len(df_tagged.index))
     
@@ -1087,7 +1087,7 @@ class NLPClass:
         adj_counter=0
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if(row[1]=="JJ"):
+                if(row[1]=="adjective"):
                     adj_counter+=1
         elif language == "spanish":
             for i,row in df_tagged.iterrows():
@@ -1110,7 +1110,7 @@ class NLPClass:
         adv_counter=0
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if(row[1]=="RB"):
+                if(row[1]=="adverb"):
                     adv_counter+=1
         elif language == "spanish":
             for i,row in df_tagged.iterrows():
@@ -1136,10 +1136,10 @@ class NLPClass:
 
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if((str(row[1]).startswith("V")) | (row[1]=="NN") | (row[1]=="NNS") |
-                   (str(row[1]).startswith("JJ")) | (str(row[1]).startswith("RB"))):
+                if((row[1] == "verb") | (row[1] == "noun") |
+                   (row[1]=="adjective") | (row[1]=="adverb")):
                     content_word_counter+=1
-                    if((row[1]=="NN") | (row[1]=="NNS")):
+                    if((row[1]=="noun") | (row[1]=="noun")):
                         noun_counter+=1
                 
         elif language == "spanish":
@@ -1168,10 +1168,10 @@ class NLPClass:
 
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if((str(row[1]).startswith("V")) | (row[1]=="NN") | (row[1]=="NNS") |
-                   (str(row[1]).startswith("JJ")) | (str(row[1]).startswith("RB"))):
+                if((row[1] == "verb") | (row[1] == "noun") |
+                   (row[1]=="adjective") | (row[1]=="adverb")):
                     content_word_counter+=1
-                    if(str(row[1]).startswith("V")):
+                    if(str(row[1]).startswith("verb")):
                         verb_counter+=1
                 
         elif language == "spanish":
@@ -1200,10 +1200,10 @@ class NLPClass:
 
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if((str(row[1]).startswith("V")) | (row[1]=="NN") | (row[1]=="NNS") |
-                   (str(row[1]).startswith("JJ")) | (str(row[1]).startswith("RB"))):
+                if((row[1] == "verb") | (row[1] == "noun") |
+                   (row[1]=="adjective") | (row[1]=="adverb")):
                     content_word_counter+=1
-                    if(str(row[1]).startswith("JJ")):
+                    if(str(row[1]).startswith("adjective")):
                         adj_counter+=1
                 
         elif language == "spanish":
@@ -1232,10 +1232,10 @@ class NLPClass:
 
         if (language=="english"):
             for i,row in df_tagged.iterrows():
-                if((str(row[1]).startswith("V")) | (row[1]=="NN") | (row[1]=="NNS") |
-                   (str(row[1]).startswith("JJ")) | (str(row[1]).startswith("RB"))):
+                if((row[1] == "verb") | (row[1] == "noun") |
+                   (row[1]=="adjective") | (row[1]=="adverb")):
                     content_word_counter+=1
-                    if(str(row[1]).startswith("RB")):
+                    if(str(row[1]).startswith("adverb")):
                         adv_counter+=1
                 
         elif language == "spanish":
